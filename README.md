@@ -56,7 +56,10 @@ node "public/scripts/extensions/third-party/sillytavern-mobile/install.mjs"
 
 ### 第 4 步：装手机 App
 
-**改装版（推荐）**：[直接下载 APK](https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.0.apk)
+**改装版（推荐）**：[直接下载 APK](https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.0.apk)（jsDelivr CDN，国内较快）
+
+> 备用原链：`https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.0.apk`
+> SHA-256：`f293ce8fb7592bc7b5c3b9b276fa101988a6404d4de239adc277a8c94a0a727a`
 
 - 包名 `io.github.fangwen9527.stmobile`，可与官方 App 共存
 - 启动即进「已配对设备」列表
