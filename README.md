@@ -80,6 +80,17 @@ node "public/scripts/extensions/third-party/sillytavern-mobile/install.mjs"
 
 二维码 / 配对链接 10 分钟有效，重新生成会让旧码立即作废。
 
+### 手机中途退出，回复也不会丢
+
+酒馆本身是「浏览器生成」：客户端一断，服务端会立刻 abort 掉上游 LLM 请求，已经生成的部分也不会存盘。
+本插件的网关在中间多管了一段：手机在生成途中断开时，**网关不掐断上游**，继续把回复跑完，
+再按酒馆自己的 `chat.jsonl` 结构写回聊天文件（第 1 行 `chat_metadata` 一个字节不动，避免破坏 integrity 校验）。
+
+- 覆盖普通发送、继续写、重刷（swipe）
+- 写回前先把原文件备份到 `~/.st-mobile/chat-backups/`
+- 面板状态接口的 `recovered` 字段能看到最近 10 次代跑记录
+- 只在「确实是手机断开」时接管；手机在线时行为与原生完全一致
+
 ## 它做了什么
 
 ```

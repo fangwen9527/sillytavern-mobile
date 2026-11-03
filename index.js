@@ -243,6 +243,76 @@ function bindCopyButtons() {
     });
 }
 
+// ─────────────────────────────────────────────────────────────
+// 后台代跑：给 /api/backends/chat-completions/generate 贴一个聊天身份头。
+// 手机在生成途中断开时，网关会继续把上游跑完，然后按这个头找到聊天文件，
+// 把完整回复写回去——重开就能看到整条消息，而不是半截或空白。
+// ─────────────────────────────────────────────────────────────
+let stmPendingIntent = 'normal';
+
+function stmEncodeHint(payload) {
+    const bytes = new TextEncoder().encode(JSON.stringify(payload));
+    let binary = '';
+    bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function stmChatHint() {
+    try {
+        const context = ctx();
+        const chatId = typeof context.getCurrentChatId === 'function'
+            ? context.getCurrentChatId()
+            : context.chatId;
+        if (!chatId) return null;
+
+        let folder = '';
+        if (context.groupId) {
+            // 群聊：酒馆按群 id 建目录
+            folder = String(context.groupId);
+        } else {
+            const character = (context.characters || [])[Number(context.characterId)];
+            folder = String((character && character.avatar) || '').replace(/\.png$/i, '');
+        }
+        return stmEncodeHint({ f: String(chatId), a: folder, i: stmPendingIntent });
+    } catch {
+        return null;
+    }
+}
+
+function installGenerationWatcher() {
+    if (window.__stmGenerationWatcher) return;
+    window.__stmGenerationWatcher = true;
+
+    try {
+        const context = ctx();
+        const started = (context.eventTypes || context.event_types || {}).GENERATION_STARTED;
+        if (started && context.eventSource) {
+            context.eventSource.on(started, (type) => {
+                const value = String(type || 'normal');
+                // 重刷/换 swipe 走的是"改最后一条"，和普通发送的落盘方式不同
+                stmPendingIntent = (value === 'swipe' || value === 'regenerate') ? 'swipe' : value;
+            });
+        }
+    } catch { /* 事件总线不可用就一律按 normal 处理 */ }
+
+    const originalFetch = window.fetch;
+    window.fetch = function (input, init) {
+        try {
+            const url = typeof input === 'string' ? input : String((input && input.url) || '');
+            const method = String((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+            if (method === 'POST' && url.indexOf('/api/backends/chat-completions/generate') !== -1) {
+                const hint = stmChatHint();
+                if (hint) {
+                    const headers = new Headers((init && init.headers) || {});
+                    headers.set('x-stm-chat', hint);
+                    init = Object.assign({}, init, { headers });
+                }
+            }
+        } catch { /* 贴头失败只影响断线补救，不影响正常生成 */ }
+        return originalFetch.call(this, input, init);
+    };
+}
+
 async function boot() {
     const container = document.getElementById('extensions_settings');
     if (!container) {
@@ -270,6 +340,7 @@ async function boot() {
     container.appendChild(wrapper);
     root = wrapper;
 
+    installGenerationWatcher();
     bindStepToggles();
     bindCopyButtons();
 

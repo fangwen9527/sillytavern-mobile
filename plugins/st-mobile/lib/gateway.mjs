@@ -3,9 +3,14 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 
 import { PAIR_PAGE } from './pair-page.mjs';
+import { decodeChatHint, extractGeneratedText } from './background-gen.mjs';
 
 const JSON_HEADERS = { 'content-type': 'application/json', 'cache-control': 'no-store' };
 const MAX_CONTROL_BODY = 16 * 1024;
+
+/** 生成请求：这条链上是"手机 → 网关 → 酒馆 → LLM"，网关是唯一能决定"断线后还跑不跑"的位置。 */
+const GENERATE_PATH = '/api/backends/chat-completions/generate';
+const MAX_RECOVER_BYTES = 8 * 1024 * 1024;
 
 /**
  * 与 dsh-mobile Android 客户端（0.7.x）协商的元数据常量。
@@ -63,6 +68,9 @@ export class Gateway {
     this.sessionCookieNames = ['dsh_ma_session', '__Host-dsh_ma_session'];
     this.sessions = new Map();
     this.onDevicesChanged = options.onDevicesChanged || (() => {});
+    this.log = options.log || (() => {});
+    /** 手机在生成途中断开时，上游仍会跑完，这里把成品交出去落盘。 */
+    this.onGenerationOrphaned = options.onGenerationOrphaned || (() => {});
   }
 
   openPairing(ttlMs = 600_000) {
@@ -225,22 +233,90 @@ export class Gateway {
       headers.authorization = 'Basic ' + Buffer.from(this.basicAuth.user + ':' + this.basicAuth.pass).toString('base64');
     }
 
+    const pathname = String(req.url || '').split('?')[0];
+    const isGenerate = req.method === 'POST' && pathname === GENERATE_PATH;
+    // 生成请求从一开始就看护：手机可能在响应回来之前就断了。
+    const watch = isGenerate
+      ? {
+        hint: decodeChatHint(req.headers['x-stm-chat']),
+        chunks: [],
+        bytes: 0,
+        contentType: '',
+        status: 0,
+        startedAt: Date.now(),
+        orphaned: false,
+      }
+      : null;
+    let upstreamRes = null;
+
     const upstream = http.request({
       host: this.upstream.host,
       port: this.upstream.port,
       method: req.method,
       path: req.url,
       headers,
-    }, (upstreamRes) => {
-      res.writeHead(upstreamRes.statusCode || 502, upstreamRes.headers);
-      upstreamRes.pipe(res);
+    }, (incoming) => {
+      upstreamRes = incoming;
+      if (watch) {
+        watch.status = incoming.statusCode || 0;
+        watch.contentType = String(incoming.headers['content-type'] || '');
+        incoming.on('data', (chunk) => {
+          if (watch.bytes > MAX_RECOVER_BYTES) return;
+          watch.chunks.push(chunk);
+          watch.bytes += chunk.length;
+        });
+        incoming.on('end', () => {
+          if (!watch.orphaned) return;
+          watch.finishedAt = Date.now();
+          let text = '';
+          try { text = extractGeneratedText(Buffer.concat(watch.chunks), watch.contentType); } catch { text = ''; }
+          try {
+            this.onGenerationOrphaned({
+              hint: watch.hint,
+              text,
+              status: watch.status,
+              contentType: watch.contentType,
+              startedAt: watch.startedAt,
+              finishedAt: watch.finishedAt,
+            });
+          } catch (error) {
+            this.log('后台代跑落盘回调失败: ' + error.message);
+          }
+        });
+      }
+
+      // 手机已经走了：别往死掉的 res 上写，安静把上游读完
+      if (watch && watch.orphaned) {
+        incoming.resume();
+        return;
+      }
+
+      res.writeHead(incoming.statusCode || 502, incoming.headers);
+      incoming.pipe(res);
     });
     upstream.on('error', (error) => {
-      if (!res.headersSent) res.writeHead(502, { 'content-type': 'text/plain; charset=utf-8' });
-      res.end('Bad Gateway: ' + error.message);
+      if (!res.headersSent && !(watch && watch.orphaned)) {
+        res.writeHead(502, { 'content-type': 'text/plain; charset=utf-8' });
+        res.end('Bad Gateway: ' + error.message);
+      }
     });
     req.pipe(upstream);
-    res.on('close', () => upstream.destroy());
+    res.on('close', () => {
+      // 关键分支：生成请求 + 响应还没写完 = 手机断了。
+      // 这里**不能** upstream.destroy()。酒馆把上游 LLM 的 abort 挂在入站 socket 的 close 上
+      // （src/endpoints/backends/chat-completions.js:2630），一关就等于当场掐死生成。
+      if (watch && !res.writableFinished) {
+        watch.orphaned = true;
+        try { req.unpipe(upstream); } catch { /* 请求体多半已经发完 */ }
+        try {
+          upstreamRes?.unpipe(res);
+          // unpipe 会把源流切换回 paused，不 resume 就永远等不到 end（数据也就不再被读走）
+          upstreamRes?.resume();
+        } catch { /* 已经自动解绑 */ }
+        return;
+      }
+      upstream.destroy();
+    });
   }
 
   async handler(req, res) {

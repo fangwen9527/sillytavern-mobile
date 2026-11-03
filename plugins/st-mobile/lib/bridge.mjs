@@ -7,6 +7,7 @@ import { IrohHost, prepareTls, readTlsStatus } from './sidecar.mjs';
 import { Gateway } from './gateway.mjs';
 import { buildDescriptor, caFingerprint, irohHostname } from './pairing.mjs';
 import { ensureLanCertificate, lanAddresses } from './lan.mjs';
+import { persistRecoveredReply } from './background-gen.mjs';
 
 const LAN_PORT = Number(process.env.ST_MOBILE_LAN_PORT || 8443);
 
@@ -49,6 +50,8 @@ export class Bridge {
     this.sidecarPath = null;
     this.localOnly = false;
     this.lanInfo = null;
+    /** 最近的后台代跑记录（面板/状态里看得见，便于排查）。 */
+    this.recovered = [];
   }
 
   status() {
@@ -64,6 +67,7 @@ export class Bridge {
       descriptor: this.descriptor,
       lanUrl: this.lanUrl,
       lan: this.lanInfo,
+      recovered: this.recovered.slice(-10),
       peerPath: this.peerPath,
       connectedPeers: this.connectedPeers,
       startedAt: this.startedAt,
@@ -106,6 +110,8 @@ export class Bridge {
         basicAuth,
         devices: this.devices,
         onDevicesChanged: (map) => saveDevices(map),
+        log: this.log,
+        onGenerationOrphaned: (job) => this.recoverOrphaned(job),
       });
       const port = await this.gateway.start();
       this.log('iroh 网关监听 127.0.0.1:' + port);
@@ -200,6 +206,49 @@ export class Bridge {
     }
 
     return { text, descriptor, lanUrl, expiresAt };
+  }
+
+  /**
+   * 手机在生成途中断开，上游仍跑完后的落盘处理。
+   * 只有拿到 2xx 和正文才写；聊天身份缺失时只记一条日志，不猜。
+   */
+  recoverOrphaned({ hint, text, status, startedAt, finishedAt }) {
+    const chars = String(text || '').trim().length;
+    if (status < 200 || status >= 300) {
+      this.log('后台代跑：上游返回 ' + status + '，不落盘');
+      return;
+    }
+    if (!chars) {
+      this.log('后台代跑：回复为空，不落盘');
+      return;
+    }
+    if (!hint) {
+      this.log('后台代跑：缺少聊天身份（前端没带 x-stm-chat），已丢弃 ' + chars + ' 字');
+      return;
+    }
+    let result;
+    try {
+      result = persistRecoveredReply({ hint, text, startedAt, finishedAt });
+    } catch (error) {
+      result = { ok: false, reason: 'exception', error: error.message };
+    }
+    this.recovered.push({
+      at: Date.now(),
+      ok: Boolean(result.ok),
+      mode: result.mode || null,
+      chars,
+      file: result.file || hint.file,
+      folder: hint.folder || '',
+      intent: hint.intent,
+      reason: result.reason || null,
+      error: result.error || null,
+    });
+    if (this.recovered.length > 50) this.recovered.shift();
+    if (result.ok) {
+      this.log('后台代跑：手机中途断开，已把 ' + chars + ' 字回复写回聊天（' + result.mode + '）');
+    } else {
+      this.log('后台代跑：写回失败（' + (result.reason || 'unknown') + '），正文 ' + chars + ' 字已丢弃');
+    }
   }
 
   revokeDevice(deviceId) {
