@@ -56,16 +56,16 @@ node "public/scripts/extensions/third-party/sillytavern-mobile/install.mjs"
 
 ### 第 4 步：装手机 App
 
-**改装版（推荐）**：[直接下载 APK](https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.1.apk)（jsDelivr CDN，国内较快）
+**改装版（推荐）**：[直接下载 APK](https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.2.apk)（jsDelivr CDN，国内较快）
 
-> 备用原链：`https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.1.apk`
-> SHA-256：`ba17f07040062814ebb2d5068b0f95a0f7df09ad325c3019f93ee15f0167de18`
+> 备用原链：`https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.2.apk`
+> SHA-256：`43a3086af87370e6964b8039c150ec624620d395dbb6afca0e9977dac92a93a4`
 
 - 包名 `io.github.fangwen9527.stmobile`，可与官方 App 共存
-- 启动即进「已配对设备」列表
+- **默认图标是酒馆（SillyTavern）官方标识**，可在设置里切换（鲸鱼娘 / DeepSeek 鲸鱼 ×6）
+- 启动永远进「已配对设备」/「选择连接方式」，不提供「直接进入酒馆」（否则没有回到列表的入口）
 - 扫码页支持**从相册选择二维码图片**
-- 酒红底白鲸图标
-- 连接方式页只保留「局域网」+「iroh」两条；右上角齿轮可换图标、改启动行为
+- 连接方式页只保留「局域网」+「iroh」两条；右上角齿轮是设置入口
 - 支持粘贴配对链接，不扫码也能配对
 
 **官方版**：[DSH Mobile iroh 完整版](https://github.com/saya-ch/dsh-mobile/releases/tag/android-v0.7.1) 同样可以连本插件。
