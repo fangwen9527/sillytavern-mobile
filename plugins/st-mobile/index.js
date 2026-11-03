@@ -67,6 +67,15 @@ export async function init(router) {
         json(res, 200, status);
     });
 
+    router.get('/settings', (req, res) => {
+        json(res, 200, { ...bridge.settings });
+    });
+
+    router.post('/settings', (req, res) => {
+        const patch = req.body && typeof req.body === 'object' ? req.body : {};
+        json(res, 200, bridge.updateSettings({ backgroundRecover: patch.backgroundRecover }));
+    });
+
     router.get('/logs', (req, res) => {
         res.type('text/plain').send(logLines.join('\n'));
     });

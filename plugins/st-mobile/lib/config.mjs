@@ -13,6 +13,7 @@ export const HOME = os.homedir();
 export const STATE_DIR = path.join(HOME, '.st-mobile');
 export const SIDECAR_DIR = path.join(STATE_DIR, 'sidecar');
 export const DEVICES_FILE = path.join(STATE_DIR, 'devices.json');
+export const SETTINGS_FILE = path.join(STATE_DIR, 'settings.json');
 
 /** 酒馆自己的数据目录（由 server-main.js 注入 globalThis.DATA_ROOT）。 */
 export function stDataRoot() {

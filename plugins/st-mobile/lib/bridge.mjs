@@ -8,6 +8,7 @@ import { Gateway } from './gateway.mjs';
 import { buildDescriptor, caFingerprint, irohHostname } from './pairing.mjs';
 import { ensureLanCertificate, lanAddresses } from './lan.mjs';
 import { persistRecoveredReply } from './background-gen.mjs';
+import { loadSettings, saveSettings } from './settings.mjs';
 
 const LAN_PORT = Number(process.env.ST_MOBILE_LAN_PORT || 8443);
 
@@ -52,6 +53,7 @@ export class Bridge {
     this.lanInfo = null;
     /** 最近的后台代跑记录（面板/状态里看得见，便于排查）。 */
     this.recovered = [];
+    this.settings = loadSettings();
   }
 
   status() {
@@ -68,6 +70,7 @@ export class Bridge {
       lanUrl: this.lanUrl,
       lan: this.lanInfo,
       recovered: this.recovered.slice(-10),
+      settings: { ...this.settings },
       peerPath: this.peerPath,
       connectedPeers: this.connectedPeers,
       startedAt: this.startedAt,
@@ -112,6 +115,7 @@ export class Bridge {
         onDevicesChanged: (map) => saveDevices(map),
         log: this.log,
         onGenerationOrphaned: (job) => this.recoverOrphaned(job),
+        autoRecoverEnabled: () => this.settings.backgroundRecover,
       });
       const port = await this.gateway.start();
       this.log('iroh 网关监听 127.0.0.1:' + port);
@@ -206,6 +210,14 @@ export class Bridge {
     }
 
     return { text, descriptor, lanUrl, expiresAt };
+  }
+
+  /** 改开关：即时生效，网关每次请求现读，不用重启酒馆。 */
+  updateSettings(patch) {
+    this.settings = saveSettings(this.settings, patch);
+    if (this.gateway) this.gateway.autoRecoverEnabled = () => this.settings.backgroundRecover;
+    this.log('设置已更新：断线代跑 = ' + (this.settings.backgroundRecover ? '开' : '关'));
+    return { ...this.settings };
   }
 
   /**

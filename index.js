@@ -112,6 +112,9 @@ function markNotInstalled() {
     setStep('restart', '待重启', '');
     setStep('pair', '—', '');
     setStep('status', '未运行', '');
+    setStep('advanced', '—', '');
+    const box = $('stm-auto-recover');
+    if (box) box.disabled = true;
 }
 
 function markRunning(status) {
@@ -161,7 +164,25 @@ async function refresh() {
         $('stm-err-row').style.display = 'none';
     }
     renderDevices(status.devices);
+    applyAdvanced(status);
     $('stm-log').textContent = (status.logs || []).slice(-40).join('\n') || '—';
+}
+
+/** 第 7 步：实验开关。开关真相在服务端，这里只反映 /status 里的 settings。 */
+function applyAdvanced(status) {
+    const box = $('stm-auto-recover');
+    const hint = $('stm-advanced-hint');
+    if (!box) return;
+    const settings = (status && status.settings) || {};
+    const on = settings.backgroundRecover === true;
+    box.checked = on;
+    box.disabled = false;
+    setStep('advanced', on ? '已开启' : '默认关闭', on ? 'done' : 'off');
+    if (hint) {
+        hint.textContent = on
+            ? '当前：开。手机在生成途中断开，回复会继续跑完并写回聊天记录。'
+            : '当前：关（默认）。行为与酒馆原生一致——断开即中止，回复不会保留。';
+    }
 }
 
 function startPolling() {
@@ -343,6 +364,24 @@ async function boot() {
     installGenerationWatcher();
     bindStepToggles();
     bindCopyButtons();
+
+    if ($('stm-auto-recover')) {
+        $('stm-auto-recover').addEventListener('change', async () => {
+            const box = $('stm-auto-recover');
+            const hint = $('stm-advanced-hint');
+            const want = box.checked;
+            box.disabled = true;
+            if (hint) hint.textContent = '保存中…';
+            const result = await apiPost('/settings', { backgroundRecover: want });
+            if (!result.ok) {
+                box.checked = !want;
+                box.disabled = false;
+                if (hint) hint.textContent = '保存失败：' + ((result.body && result.body.error) || result.status);
+                return;
+            }
+            applyAdvanced({ settings: result.body });
+        });
+    }
 
     if ($('stm-pair')) $('stm-pair').addEventListener('click', generatePairing);
     if ($('stm-pair-quick')) $('stm-pair-quick').addEventListener('click', generatePairing);

@@ -71,6 +71,8 @@ export class Gateway {
     this.log = options.log || (() => {});
     /** 手机在生成途中断开时，上游仍会跑完，这里把成品交出去落盘。 */
     this.onGenerationOrphaned = options.onGenerationOrphaned || (() => {});
+    /** 断线代跑开关（实验功能，默认关闭）。每次请求现读，切了立刻生效。 */
+    this.autoRecoverEnabled = options.autoRecoverEnabled || (() => false);
   }
 
   openPairing(ttlMs = 600_000) {
@@ -234,7 +236,10 @@ export class Gateway {
     }
 
     const pathname = String(req.url || '').split('?')[0];
-    const isGenerate = req.method === 'POST' && pathname === GENERATE_PATH;
+    // 开关关掉时完全走原生逻辑：不建看护对象，手机一断就跟酒馆一起断。
+    let autoRecover = false;
+    try { autoRecover = Boolean(this.autoRecoverEnabled()); } catch { autoRecover = false; }
+    const isGenerate = req.method === 'POST' && pathname === GENERATE_PATH && autoRecover;
     // 生成请求从一开始就看护：手机可能在响应回来之前就断了。
     const watch = isGenerate
       ? {

@@ -154,14 +154,14 @@ node server.js</pre>
             <div class="stm-cmd-block">
                 <div class="stm-cmd-title">酒馆远程 App（推荐，改过启动页和图标）</div>
                 <div class="stm-btns">
-                    <a class="menu_button stm-btn" href="https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.2.apk" target="_blank" rel="noopener">直接下载 APK（15.8 MB）</a>
+                    <a class="menu_button stm-btn" href="https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.0.apk" target="_blank" rel="noopener">直接下载 APK（15.7 MB）</a>
                     <div class="menu_button stm-btn stm-copy" data-copy="app-direct">复制下载链接</div>
                 </div>
-                <pre class="stm-code" data-cmd="app-direct" style="margin-top:8px">https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.2.apk</pre>
+                <pre class="stm-code" data-cmd="app-direct" style="margin-top:8px">https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.0.apk</pre>
                 <div class="stm-hint" style="margin-top:6px">
                     国内直连较快（jsDelivr CDN）。打不开就用备用原链：
                 </div>
-                <pre class="stm-code" data-cmd="app-github">https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.2.apk</pre>
+                <pre class="stm-code" data-cmd="app-github">https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.0.apk</pre>
                 <div class="menu_button stm-btn stm-copy" data-copy="app-github">复制 GitHub 原链</div>
                 <div class="stm-hint" style="margin-top:6px">
                     包名 <code>io.github.fangwen9527.stmobile</code>，可以和官方 App 同时安装。
@@ -178,6 +178,37 @@ node server.js</pre>
             <div class="stm-hint" style="margin-top:8px">
                 装好后打开 App → 切到「iroh 连接（实验）」→ 扫码。App 会固定这台电脑的证书，之后自动重连。
             </div>
+        </div>
+    </div>
+
+    <div class="stm-step" data-step="advanced">
+        <div class="stm-step-head">
+            <span class="stm-step-num">7</span>
+            <span class="stm-step-title">高级（实验功能）</span>
+            <span class="stm-step-state" data-state="advanced">默认关闭</span>
+            <i class="fa-solid fa-chevron-down stm-chev"></i>
+        </div>
+        <div class="stm-step-body">
+            <div class="stm-hint">
+                这里的开关<b>默认全部关闭</b>，打开后行为会和酒馆原生不同。不确定就先别开。
+            </div>
+
+            <div class="stm-opt">
+                <div class="stm-opt-text">
+                    <div class="stm-opt-title">断线代跑（实验）</div>
+                    <div class="stm-hint">
+                        手机在生成途中断开时，<b>不再掐断上游</b>，让回复继续跑完并写回聊天记录。<br>
+                        重新打开酒馆就能看到那条完整回复。代价是：断开期间看不到打字过程，且会多占一份上游额度。<br>
+                        关掉 = 完全回到酒馆原生行为（一断就中止，回复丢失）。
+                    </div>
+                </div>
+                <label class="stm-switch">
+                    <input type="checkbox" id="stm-auto-recover">
+                    <span class="stm-slider"></span>
+                </label>
+            </div>
+
+            <div class="stm-hint" id="stm-advanced-hint" style="margin-top:8px">读取中…</div>
         </div>
     </div>
 
