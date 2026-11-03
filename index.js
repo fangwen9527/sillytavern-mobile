@@ -193,7 +193,17 @@ async function generatePairing() {
         $('stm-qr-lan').style.display = 'none';
     }
     const minutes = data.expiresAt ? Math.max(0, Math.round((data.expiresAt - Date.now()) / 60000)) : 10;
-    $('stm-pair-hint').textContent = '扫任意一个，约 ' + minutes + ' 分钟内有效（先扫的生效，另一个立即失效）。';
+    $('stm-pair-hint').textContent = '扫任意一个，约 ' + minutes + ' 分钟内有效（先扫的生效，另一个立即失效）。扫不了码的话，用下面的配对链接。';
+
+    // 配对链接：iroh 那段就是二维码里的原文（App 的 iroh 输入框直接吃），局域网那条是短链接
+    const linkWrap = $('stm-link-wrap');
+    const linkIroh = $('stm-link-iroh');
+    const linkLan = $('stm-link-lan');
+    const linkLanRow = $('stm-link-lan-row');
+    if (linkIroh) linkIroh.textContent = data.text || '';
+    if (linkLan) linkLan.textContent = data.lanUrl || '';
+    if (linkLanRow) linkLanRow.style.display = data.lanUrl ? '' : 'none';
+    if (linkWrap) linkWrap.style.display = data.text ? '' : 'none';
 
     // 生成成功后自动展开第 4 步并滚到能看见二维码的位置
     const pairStep = root && root.querySelector('[data-step="pair"]');

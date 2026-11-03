@@ -57,6 +57,13 @@
 .stm-qr-item img { width: 100%; max-width: 220px; border-radius: 8px; background: #fff; padding: 6px; }
 .stm-qr-item .stm-qr-label { font-size: 11px; opacity: .75; margin-bottom: 6px; }
 
+/* 配对链接 */
+.stm-link-wrap { margin-top: 12px; border-top: 1px dashed rgba(255, 255, 255, .12); padding-top: 10px; }
+.stm-link-row { margin-bottom: 10px; }
+.stm-link-row:last-child { margin-bottom: 0; }
+.stm-link-title { font-size: 11px; opacity: .75; margin-bottom: 5px; line-height: 1.6; }
+.stm-link { font-size: 10.5px; max-height: 96px; }
+
 /* 状态表 */
 .stm-row { display: flex; justify-content: space-between; gap: 10px; align-items: center; font-size: 12px;
     padding: 4px 0; border-bottom: 1px dashed rgba(255, 255, 255, .07); }

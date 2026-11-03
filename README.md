@@ -56,27 +56,29 @@ node "public/scripts/extensions/third-party/sillytavern-mobile/install.mjs"
 
 ### 第 4 步：装手机 App
 
-**改装版（推荐）**：[直接下载 APK](https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.0.apk)（jsDelivr CDN，国内较快）
+**改装版（推荐）**：[直接下载 APK](https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.1.apk)（jsDelivr CDN，国内较快）
 
-> 备用原链：`https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.0.apk`
-> SHA-256：`f293ce8fb7592bc7b5c3b9b276fa101988a6404d4de239adc277a8c94a0a727a`
+> 备用原链：`https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.1.apk`
+> SHA-256：`ba17f07040062814ebb2d5068b0f95a0f7df09ad325c3019f93ee15f0167de18`
 
 - 包名 `io.github.fangwen9527.stmobile`，可与官方 App 共存
 - 启动即进「已配对设备」列表
 - 扫码页支持**从相册选择二维码图片**
 - 酒红底白鲸图标
+- 连接方式页只保留「局域网」+「iroh」两条；右上角齿轮可换图标、改启动行为
+- 支持粘贴配对链接，不扫码也能配对
 
 **官方版**：[DSH Mobile iroh 完整版](https://github.com/saya-ch/dsh-mobile/releases/tag/android-v0.7.1) 同样可以连本插件。
 
 ## 使用
 
 1. 打开酒馆 → 设置 → 扩展 → **酒馆远程**
-2. 点「生成配对二维码」，会同时给出两个码：
+2. 点「生成配对二维码」，会同时给出两个码，以及两条可复制的**配对链接**：
    - **iroh 直连**：外网可用，需要 App
    - **局域网**：同一 Wi-Fi，App 或浏览器都行
-3. 手机扫码 → 直接进入酒馆
+3. 手机扫码 → 直接进入酒馆；扫不了码就点「复制配对链接」，粘到 App 的「iroh 连接 → 配对信息」输入框里点「连接」
 
-二维码 10 分钟有效，重新生成会让旧码立即作废。
+二维码 / 配对链接 10 分钟有效，重新生成会让旧码立即作废。
 
 ## 它做了什么
 

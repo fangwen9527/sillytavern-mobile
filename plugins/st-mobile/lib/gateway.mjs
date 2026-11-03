@@ -15,7 +15,9 @@ const MAX_CONTROL_BODY = 16 * 1024;
 const METADATA_VERSION = 1;
 const DISCOVERY_PROTOCOL = 1;
 const PLUGIN_PROTOCOL_VERSION = '0.8.1';
-const MINIMUM_APP_VERSION = '0.7.0';
+// 改装版 App 用的是自己的编号体系（0.1.x），所以最低版本按我们的号走；
+// 上游官方包 0.7.x/0.8.x 的版本号更大，同样能通过这条比较。
+const MINIMUM_APP_VERSION = '0.1.0';
 
 function sendJson(res, status, body, extra = {}) {
   const payload = Buffer.from(JSON.stringify(body));
