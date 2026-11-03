@@ -1,0 +1,192 @@
+<div class="stm-panel" id="stm-panel">
+
+    <div class="stm-summary">
+        <div class="stm-summary-left">
+            <span class="stm-k">服务端组件</span>
+            <span id="stm-state" class="stm-badge warn">检测中…</span>
+        
+    <div class="stm-footer">
+        <a href="https://github.com/fangwen9527/sillytavern-mobile" target="_blank" rel="noopener">GitHub 仓库</a>
+        <span class="stm-dot">·</span>
+        <a href="https://github.com/fangwen9527/sillytavern-mobile/issues" target="_blank" rel="noopener">反馈问题</a>
+        <span class="stm-dot">·</span>
+        <span>插件 v0.1.0</span>
+    </div>
+
+</div>
+        <div class="stm-summary-right">
+            <div class="menu_button stm-btn" id="stm-pair-quick">生成配对二维码</div>
+            <div class="menu_button stm-btn" id="stm-restart">重启隧道</div>
+        </div>
+    </div>
+
+    <div class="stm-step" data-step="install">
+        <div class="stm-step-head">
+            <span class="stm-step-num">1</span>
+            <span class="stm-step-title">把服务端组件装进 plugins/</span>
+            <span class="stm-step-state" data-state="install">待处理</span>
+            <i class="fa-solid fa-chevron-down stm-chev"></i>
+        </div>
+        <div class="stm-step-body">
+            <div class="stm-hint">
+                酒馆自带的「安装扩展」只能装前端扩展（<code>public/scripts/extensions/third-party</code>）。
+                真正干活的网关和 iroh 隧道是 <b>服务端插件</b>，必须落在酒馆根目录的 <code>plugins/</code> 里，而酒馆没有任何 UI 入口能把文件放进那里。
+                下面的命令会自动完成：定位酒馆目录 → 备份旧版本 → 复制 → <code>npm install</code>。
+            </div>
+            <div class="stm-hint" style="margin-top:8px">
+                <b>操作：</b>打开酒馆根目录（有 <code>server.js</code> 的那个文件夹）→ 在空白处 <b>Shift + 右键</b> → <b>在此处打开 PowerShell</b> → 粘贴对应命令回车。
+            </div>
+
+            <div class="stm-cmd-block">
+                <div class="stm-cmd-title">Windows PowerShell</div>
+                <pre class="stm-code" data-cmd="ps">powershell -ExecutionPolicy Bypass -File ".\public\scripts\extensions\third-party\sillytavern-mobile\install.ps1"</pre>
+                <div class="menu_button stm-btn stm-copy" data-copy="ps">复制 PowerShell 命令</div>
+            </div>
+
+            <div class="stm-cmd-block">
+                <div class="stm-cmd-title">Windows CMD / 命令提示符</div>
+                <pre class="stm-code" data-cmd="cmd">powershell -NoProfile -ExecutionPolicy Bypass -File ".\public\scripts\extensions\third-party\sillytavern-mobile\install.ps1"</pre>
+                <div class="menu_button stm-btn stm-copy" data-copy="cmd">复制 CMD 命令</div>
+            </div>
+
+            <div class="stm-cmd-block">
+                <div class="stm-cmd-title">Linux / macOS / Termux</div>
+                <pre class="stm-code" data-cmd="nix">node "public/scripts/extensions/third-party/sillytavern-mobile/install.mjs"</pre>
+                <div class="menu_button stm-btn stm-copy" data-copy="nix">复制 Linux/macOS 命令</div>
+            </div>
+
+            <div class="stm-hint" style="margin-top:8px">
+                完成后应该看到 <code>完成。请重启 SillyTavern。</code>；面板标题右侧的状态会变成「运行中」。
+            </div>
+        </div>
+    </div>
+
+    <div class="stm-step" data-step="config">
+        <div class="stm-step-head">
+            <span class="stm-step-num">2</span>
+            <span class="stm-step-title">确认 config.yaml 打开了服务端插件</span>
+            <span class="stm-step-state" data-state="config">待确认</span>
+            <i class="fa-solid fa-chevron-down stm-chev"></i>
+        </div>
+        <div class="stm-step-body">
+            <div class="stm-hint">
+                酒馆根目录的 <code>config.yaml</code> 里必须有这一行（默认就是 <code>true</code>，如果你改过就检查一下）：
+            </div>
+            <pre class="stm-code">enableServerPlugins: true</pre>
+            <div class="stm-hint" style="margin-top:8px">
+                这一项关掉时，<code>plugins/</code> 下的所有服务端插件都不会被加载（包括这个）。改完要重启酒馆。
+            </div>
+        </div>
+    </div>
+
+    <div class="stm-step" data-step="restart">
+        <div class="stm-step-head">
+            <span class="stm-step-num">3</span>
+            <span class="stm-step-title">重启酒馆</span>
+            <span class="stm-step-state" data-state="restart">待重启</span>
+            <i class="fa-solid fa-chevron-down stm-chev"></i>
+        </div>
+        <div class="stm-step-body">
+            <div class="stm-hint">装完组件或改过 <code>config.yaml</code> 之后，重启酒馆才会加载服务端插件。</div>
+            <div class="stm-cmd-block">
+                <div class="stm-cmd-title">Windows</div>
+                <pre class="stm-code" data-cmd="restart-win">:: 在运行酒馆的窗口按 Ctrl+C 停止，然后
+node server.js</pre>
+                <div class="menu_button stm-btn stm-copy" data-copy="restart-win">复制启动命令</div>
+            </div>
+            <div class="stm-cmd-block">
+                <div class="stm-cmd-title">Linux / macOS</div>
+                <pre class="stm-code" data-cmd="restart-nix"># 在运行酒馆的窗口按 Ctrl+C 停止，然后
+node server.js</pre>
+                <div class="menu_button stm-btn stm-copy" data-copy="restart-nix">复制启动命令</div>
+            </div>
+            <div class="stm-hint" style="margin-top:8px">重启后刷新本页面，状态徽章变成「运行中」即成功。</div>
+        </div>
+    </div>
+
+    <div class="stm-step" data-step="pair">
+        <div class="stm-step-head">
+            <span class="stm-step-num">4</span>
+            <span class="stm-step-title">生成二维码并配对手机</span>
+            <span class="stm-step-state" data-state="pair">0 台设备</span>
+            <i class="fa-solid fa-chevron-down stm-chev"></i>
+        </div>
+        <div class="stm-step-body">
+            <div class="stm-btns">
+                <div class="menu_button stm-btn" id="stm-pair">生成配对二维码</div>
+            </div>
+            <div class="stm-qr-wrap" style="margin-top:10px">
+                <div class="stm-qr-item">
+                    <div class="stm-qr-label">iroh 直连（外网 / 移动数据可用，需要 App）</div>
+                    <img id="stm-qr-iroh" alt="" style="display:none">
+                </div>
+                <div class="stm-qr-item">
+                    <div class="stm-qr-label">局域网（同一 Wi-Fi，App 或浏览器都行）</div>
+                    <img id="stm-qr-lan" alt="" style="display:none">
+                </div>
+            </div>
+            <div class="stm-hint" id="stm-pair-hint">点上面的按钮生成，两个码扫任意一个即可，约 10 分钟内有效（先扫的生效，另一个立即失效）。</div>
+        </div>
+    </div>
+
+    <div class="stm-step" data-step="app">
+        <div class="stm-step-head">
+            <span class="stm-step-num">5</span>
+            <span class="stm-step-title">手机装 App（iroh 通道的必要条件）</span>
+            <span class="stm-step-state" data-state="app">手动</span>
+            <i class="fa-solid fa-chevron-down stm-chev"></i>
+        </div>
+        <div class="stm-step-body">
+            <div class="stm-hint">
+                iroh 的客户端是原生库，浏览器里没有对应实现，所以<b>只有 App 能走 iroh</b>。
+                只在家用 Wi-Fi 的话，手机浏览器直接开 <code>http://&lt;电脑局域网IP&gt;:8000</code> 就够了，不需要 App。
+            </div>
+            <div class="stm-cmd-block">
+                <div class="stm-cmd-title">酒馆远程 App（推荐，改过启动页和图标）</div>
+                <pre class="stm-code" data-cmd="app-direct">https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.0.apk</pre>
+                <div class="stm-btns">
+                    <a class="menu_button stm-btn" href="https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.0.apk" target="_blank" rel="noopener">直接下载 APK（15.7 MB）</a>
+                    <div class="menu_button stm-btn stm-copy" data-copy="app-direct">复制直链</div>
+                </div>
+                <div class="stm-hint" style="margin-top:6px">
+                    包名 <code>io.github.fangwen9527.stmobile</code>，可以和官方 App 同时安装。
+                    打开后直接进「已配对设备」列表，扫码页右下角还能<b>从相册选二维码图片</b>。
+                </div>
+            </div>
+
+            <div class="stm-cmd-block">
+                <div class="stm-cmd-title">官方 App（iroh 完整版，也能连这台酒馆）</div>
+                <pre class="stm-code" data-cmd="app-official">https://github.com/saya-ch/dsh-mobile/releases/tag/android-v0.7.1</pre>
+                <div class="menu_button stm-btn stm-copy" data-copy="app-official">复制下载页</div>
+            </div>
+
+            <div class="stm-hint" style="margin-top:8px">
+                装好后打开 App → 切到「iroh 连接（实验）」→ 扫码。App 会固定这台电脑的证书，之后自动重连。
+            </div>
+        </div>
+    </div>
+
+    <div class="stm-step" data-step="status">
+        <div class="stm-step-head">
+            <span class="stm-step-num">6</span>
+            <span class="stm-step-title">运行状态与日志</span>
+            <span class="stm-step-state" data-state="status">—</span>
+            <i class="fa-solid fa-chevron-down stm-chev"></i>
+        </div>
+        <div class="stm-step-body">
+            <div class="stm-row"><span class="stm-k">移动端地址</span><span class="stm-v" id="stm-origin">—</span></div>
+            <div class="stm-row"><span class="stm-k">链路</span><span class="stm-v" id="stm-path">—</span></div>
+            <div class="stm-row"><span class="stm-k">在线 / 已配对</span><span class="stm-v" id="stm-peers">0 / 0</span></div>
+            <div class="stm-row" id="stm-err-row" style="display:none"><span class="stm-k">错误</span><span class="stm-v" id="stm-err" style="color:#f36b6b"></span></div>
+            <div class="stm-section" style="margin-top:10px">
+                <h4>已配对设备</h4>
+                <div id="stm-devices" class="stm-hint">还没有设备配对。</div>
+            </div>
+            <div class="stm-section" style="margin-top:10px">
+                <h4>运行日志</h4>
+                <div class="stm-log" id="stm-log">—</div>
+            </div>
+        </div>
+    </div>
+
+</div>

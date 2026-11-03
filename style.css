@@ -1,0 +1,87 @@
+/* 酒馆远程 —— 设置面板样式 */
+.stm-panel { display: flex; flex-direction: column; gap: 6px; }
+
+/* 顶部状态条 */
+.stm-summary { display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--SmartThemeBorderColor, #3a3f4b); margin-bottom: 6px; }
+.stm-summary-left { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.stm-summary-right { display: flex; gap: 8px; flex-wrap: wrap; }
+.stm-k { opacity: .68; }
+
+/* 徽章 */
+.stm-badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; line-height: 1.7; white-space: nowrap; }
+.stm-badge.ok { background: rgba(86, 217, 139, .18); color: #56d98b; }
+.stm-badge.warn { background: rgba(240, 184, 73, .18); color: #f0b849; }
+.stm-badge.bad { background: rgba(243, 107, 107, .18); color: #f36b6b; }
+
+/* 步骤卡片 */
+.stm-step { border: 1px solid var(--SmartThemeBorderColor, #3a3f4b); border-radius: 8px; overflow: hidden; }
+.stm-step-head { display: flex; align-items: center; gap: 8px; padding: 9px 12px; cursor: pointer;
+    user-select: none; background: rgba(255, 255, 255, .025); transition: background .15s; }
+.stm-step-head:hover { background: rgba(255, 255, 255, .06); }
+.stm-step-num { flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%; font-size: 11px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255, 255, 255, .1); }
+.stm-step-title { flex: 1 1 auto; font-size: 13px; font-weight: 600; }
+.stm-step-state { flex: 0 0 auto; font-size: 11px; padding: 1px 8px; border-radius: 999px; white-space: nowrap;
+    color: #8b93a1; background: rgba(139, 147, 161, .14); }
+.stm-step-state.done { color: #56d98b; background: rgba(86, 217, 139, .14); }
+.stm-step-state.pending { color: #f0b849; background: rgba(240, 184, 73, .14); }
+.stm-chev { font-size: 11px; opacity: .55; transition: transform .15s; flex: 0 0 auto; }
+.stm-step.open .stm-chev { transform: rotate(180deg); }
+.stm-step-body { display: none; padding: 12px; border-top: 1px solid var(--SmartThemeBorderColor, #3a3f4b); }
+.stm-step.open .stm-step-body { display: block; }
+
+/* 命令块 */
+.stm-cmd-block { margin-top: 10px; }
+.stm-cmd-title { font-size: 11px; opacity: .7; margin-bottom: 4px; }
+.stm-code { font-family: ui-monospace, Consolas, monospace; font-size: 11px; line-height: 1.6;
+    background: rgba(0, 0, 0, .3); border: 1px solid var(--SmartThemeBorderColor, #3a3f4b);
+    border-radius: 6px; padding: 8px 10px; margin: 0; white-space: pre-wrap; word-break: break-all;
+    max-height: 110px; overflow: auto; }
+.stm-hint { font-size: 11.5px; line-height: 1.75; opacity: .8; }
+.stm-hint code { font-size: 11px; }
+
+/* 按钮：必须 flex:0 0 auto，否则会被酒馆的 .menu_button 宽度压成竖排 */
+.stm-btns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.stm-btn { cursor: pointer; user-select: none; flex: 0 0 auto; white-space: nowrap;
+    width: auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--SmartThemeBorderColor, #3a3f4b); background: rgba(255, 255, 255, .06);
+    padding: 5px 12px; border-radius: 6px; }
+.stm-btn:hover { background: rgba(255, 255, 255, .12); }
+.stm-copy-ok { color: #56d98b !important; }
+
+/* 二维码 */
+.stm-qr-wrap { display: flex; flex-wrap: wrap; gap: 12px; }
+.stm-qr-item { flex: 1 1 210px; min-width: 180px; text-align: center; }
+.stm-qr-item img { width: 100%; max-width: 220px; border-radius: 8px; background: #fff; padding: 6px; }
+.stm-qr-item .stm-qr-label { font-size: 11px; opacity: .75; margin-bottom: 6px; }
+
+/* 状态表 */
+.stm-row { display: flex; justify-content: space-between; gap: 10px; align-items: center; font-size: 12px;
+    padding: 4px 0; border-bottom: 1px dashed rgba(255, 255, 255, .07); }
+.stm-row:last-child { border-bottom: 0; }
+.stm-row .stm-v { font-family: ui-monospace, Consolas, monospace; word-break: break-all; text-align: right;
+    font-size: 11px; max-width: 66%; }
+.stm-section { border: 1px solid var(--SmartThemeBorderColor, #3a3f4b); border-radius: 8px; padding: 10px; }
+.stm-section h4 { margin: 0 0 8px; font-size: 12px; opacity: .85; font-weight: 600; }
+.stm-dev { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px;
+    padding: 5px 0; border-bottom: 1px dashed rgba(255, 255, 255, .07); }
+.stm-dev:last-child { border-bottom: 0; }
+.stm-log { font-family: ui-monospace, Consolas, monospace; font-size: 10.5px; line-height: 1.5; opacity: .8;
+    max-height: 150px; overflow: auto; white-space: pre-wrap; word-break: break-all; }
+/* 窄屏（手机浏览器）：二维码单独占一行并放大，方便扫 */
+@media (max-width: 480px) {
+    .stm-qr-item { flex: 1 1 100%; min-width: 0; }
+    .stm-qr-item img { max-width: 100%; }
+    .stm-summary { gap: 6px; }
+    .stm-btn { padding: 4px 10px; font-size: 12px; }
+    .stm-step-title { font-size: 12px; }
+}
+
+/* 底部链接 */
+.stm-footer { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center;
+    padding: 10px 0 2px; font-size: 11px; opacity: .75; border-top: 1px solid var(--SmartThemeBorderColor, #3a3f4b); margin-top: 6px; }
+.stm-footer a { color: inherit; text-decoration: underline; }
+.stm-footer a:hover { opacity: 1; }
+.stm-dot { opacity: .5; }

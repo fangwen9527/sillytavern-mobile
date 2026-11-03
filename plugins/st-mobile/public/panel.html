@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>酒馆远程访问</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px; font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+         background: #14161a; color: #e6e8eb; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: #8b93a1; font-size: 13px; margin-bottom: 20px; }
+  .grid { display: grid; grid-template-columns: minmax(0,1fr) 380px; gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: #1b1e24; border: 1px solid #2a2f39; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .card h2 { font-size: 14px; margin: 0 0 12px; color: #aeb6c2; font-weight: 600; letter-spacing: .02em; }
+  .row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 13px; border-bottom: 1px dashed #242933; }
+  .row:last-child { border-bottom: 0; }
+  .k { color: #8b93a1; flex: 0 0 auto; }
+  .v { font-family: ui-monospace, Consolas, monospace; word-break: break-all; text-align: right; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; vertical-align: middle; }
+  .badge.ok { background: #12402a; color: #56d98b; }
+  .badge.warn { background: #4a3512; color: #f0b849; }
+  .badge.bad { background: #4a1a1a; color: #f36b6b; }
+  button { background: #2f6df6; border: 0; color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  button:disabled { background: #2a2f39; color: #6d7683; cursor: not-allowed; }
+  button.ghost { background: transparent; border: 1px solid #2a2f39; color: #aeb6c2; }
+  button.danger { background: #3a1c1c; border: 1px solid #6b2b2b; color: #f36b6b; padding: 6px 10px; font-size: 12px; }
+  .qr { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .qr img { width: 100%; max-width: 320px; border-radius: 12px; background: #fff; padding: 8px; }
+  .code { font-family: ui-monospace, monospace; font-size: 26px; letter-spacing: .18em; color: #56d98b; min-height: 32px; }
+  .hint { font-size: 12px; color: #8b93a1; line-height: 1.7; }
+  .desc { font-family: ui-monospace, monospace; font-size: 11px; color: #7f8794; background: #0f1115;
+          border: 1px solid #22262e; border-radius: 8px; padding: 10px; word-break: break-all; max-height: 120px; overflow: auto; white-space: pre-wrap; }
+  pre { margin: 0; font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.5; color: #8b93a1;
+        max-height: 220px; overflow: auto; white-space: pre-wrap; word-break: break-all; }
+  .dev { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px dashed #242933; font-size: 13px; }
+  .dev:last-child { border-bottom: 0; }
+</style>
+</head>
+<body>
+  <h1>酒馆远程访问 <span id="stateBadge" class="badge warn">读取中</span></h1>
+  <div class="sub">iroh 加密直连：不需要域名、公网 IP、端口映射，手机扫一次码即可进酒馆。</div>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>运行状态</h2>
+        <div class="row"><span class="k">上游酒馆</span><span class="v" id="upstream">—</span></div>
+        <div class="row"><span class="k">iroh 端点</span><span class="v" id="endpoint">—</span></div>
+        <div class="row"><span class="k">移动端地址</span><span class="v" id="origin">—</span></div>
+        <div class="row"><span class="k">链路</span><span class="v" id="path">—</span></div>
+        <div class="row"><span class="k">在线设备</span><span class="v" id="peers">0</span></div>
+        <div class="row"><span class="k">已配对</span><span class="v" id="devCount">0</span></div>
+        <div class="row" id="errRow" style="display:none"><span class="k">错误</span><span class="v" id="err" style="color:#f36b6b"></span></div>
+      </div>
+
+      <div class="card">
+        <h2>已配对设备</h2>
+        <div id="devices" class="hint">还没有设备配对。</div>
+      </div>
+
+      <div class="card">
+        <h2>运行日志</h2>
+        <pre id="logs">—</pre>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>配对手机</h2>
+        <div class="qr">
+          <button id="pairBtn">生成配对二维码</button>
+          <div class="code" id="code"></div>
+          <div class="hint" id="pairHint">生成后下面会出现两个码，扫任意一个即可（先扫的生效，另一个立即失效）。</div>
+        </div>
+        <div style="display:grid; gap:12px; margin-top:16px">
+          <div>
+            <div class="hint" style="margin-bottom:6px"><b>iroh 直连</b>（外网 / 移动数据可用，无需公网 IP）</div>
+            <img id="qr" alt="" style="display:none; width:100%; max-width:320px; border-radius:12px; background:#fff; padding:8px">
+          </div>
+          <div>
+            <div class="hint" style="margin-bottom:6px"><b>局域网</b>（同一 Wi-Fi 下最快；端口 <span id="lanPort">—</span>）</div>
+            <img id="lanQr" alt="" style="display:none; width:100%; max-width:320px; border-radius:12px; background:#fff; padding:8px">
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>配对描述符</h2>
+        <div class="desc" id="desc">—</div>
+        <div style="margin-top:10px; display:flex; gap:8px">
+          <button class="ghost" id="copyBtn">复制</button>
+          <button class="ghost" id="restartBtn">重启服务</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>说明</h2>
+        <div class="hint">
+          · 酒馆的 Basic Auth 由网关自动注入，手机上不用再输一次密码。<br>
+          · 撤销设备后，该手机需要重新扫码。<br>
+          · 状态目录：<code>~/.st-mobile</code>（iroh 身份、证书、设备令牌）。
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  var BASE = '/api/plugins/st-mobile';
+  var csrf = null;
+
+  function $(id) { return document.getElementById(id); }
+
+  function token() {
+    if (csrf) return Promise.resolve(csrf);
+    return fetch('/csrf-token').then(function (r) { return r.json(); }).then(function (d) {
+      csrf = d.token;
+      return csrf;
+    });
+  }
+
+  function api(path, options) {
+    options = options || {};
+    return token().then(function (t) {
+      var headers = { 'Content-Type': 'application/json' };
+      if (options.method && options.method !== 'GET') headers['X-CSRF-Token'] = t;
+      return fetch(BASE + path, { method: options.method || 'GET', headers: headers, body: options.body });
+    }).then(function (res) {
+      return res.text().then(function (text) {
+        var body;
+        try { body = JSON.parse(text); } catch (e) { body = { raw: text }; }
+        return { status: res.status, body: body };
+      });
+    });
+  }
+
+  function badge(state) {
+    var el = $('stateBadge');
+    var map = { running: ['ok', '运行中'], starting: ['warn', '启动中'], stopped: ['warn', '已停止'], failed: ['bad', '启动失败'] };
+    var item = map[state] || ['warn', state || '未知'];
+    el.className = 'badge ' + item[0];
+    el.textContent = item[1];
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  var lastDevices = [];
+
+  function renderDevices(devices) {
+    lastDevices = devices || [];
+    var list = $('devices');
+    if (!lastDevices.length) { list.innerHTML = '还没有设备配对。'; return; }
+    list.innerHTML = lastDevices.map(function (d) {
+      var seen = d.lastSeenAt ? new Date(d.lastSeenAt).toLocaleString() : '—';
+      return '<div class="dev"><div><div>' + escapeHtml(d.label || 'device') + '</div>' +
+        '<div class="hint">最后在线：' + escapeHtml(seen) + '</div></div>' +
+        '<button class="danger" data-revoke="' + escapeHtml(d.deviceId) + '">撤销</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(list.querySelectorAll('[data-revoke]'), function (btn) {
+      btn.onclick = function () {
+        api('/devices/revoke', { method: 'POST', body: JSON.stringify({ deviceId: btn.getAttribute('data-revoke') }) })
+          .then(refresh);
+      };
+    });
+  }
+
+  function refresh() {
+    return api('/status').then(function (result) {
+      var body = result.body;
+      badge(body.state);
+      $('upstream').textContent = body.upstream ? (body.upstream.host + ':' + body.upstream.port) : '—';
+      $('endpoint').textContent = body.endpointId || '—';
+      $('origin').textContent = body.origin || '—';
+      $('path').textContent = body.peerPath || '—';
+      $('peers').textContent = String(body.connectedPeers || 0);
+      $('devCount').textContent = String((body.devices || []).length);
+      $('logs').textContent = (body.logs || []).join('\n') || '—';
+      if (body.error) { $('errRow').style.display = 'flex'; $('err').textContent = body.error; }
+      else { $('errRow').style.display = 'none'; }
+      renderDevices(body.devices);
+      if (body.descriptor) {
+        $('desc').textContent = JSON.stringify(body.descriptor, null, 1);
+        $('code').textContent = body.descriptor.irohCode || '';
+      }
+      $('lanPort').textContent = body.lan && body.lan.port ? String(body.lan.port) : '未启用';
+    });
+  }
+
+  $('pairBtn').onclick = function () {
+    $('pairBtn').disabled = true;
+    $('pairBtn').textContent = '生成中…';
+    api('/pairing/new', { method: 'POST', body: '{}' }).then(function (result) {
+      $('pairBtn').disabled = false;
+      $('pairBtn').textContent = '生成配对二维码';
+      if (result.status !== 200) {
+        $('pairHint').textContent = '生成失败：' + (result.body.error || result.status);
+        return;
+      }
+      if (result.body.dataUrl) { $('qr').src = result.body.dataUrl; $('qr').style.display = 'block'; }
+      if (result.body.lanDataUrl) { $('lanQr').src = result.body.lanDataUrl; $('lanQr').style.display = 'block'; }
+      else { $('lanQr').style.display = 'none'; }
+      $('code').textContent = result.body.descriptor.irohCode;
+      $('desc').textContent = JSON.stringify(result.body.descriptor, null, 1);
+      $('pairHint').innerHTML = '用手机 <b>DSH Mobile</b>（iroh 完整版）扫码，10 分钟内有效。';
+      refresh();
+    });
+  };
+
+  $('copyBtn').onclick = function () {
+    navigator.clipboard.writeText($('desc').textContent);
+    $('copyBtn').textContent = '已复制';
+    setTimeout(function () { $('copyBtn').textContent = '复制'; }, 1500);
+  };
+
+  $('restartBtn').onclick = function () {
+    $('restartBtn').disabled = true;
+    api('/restart', { method: 'POST', body: '{}' }).then(function () {
+      $('restartBtn').disabled = false;
+      refresh();
+    });
+  };
+
+  refresh();
+  setInterval(refresh, 3000);
+})();
+</script>
+</body>
+</html>

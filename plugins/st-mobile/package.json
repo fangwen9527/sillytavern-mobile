@@ -1,0 +1,11 @@
+{
+  "name": "st-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "description": "SillyTavern 远程访问：iroh 加密直连 / 局域网 + 扫码配对 + HTTPS 网关",
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}

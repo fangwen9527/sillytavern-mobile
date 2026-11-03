@@ -1,0 +1,15 @@
+# 依赖
+node_modules/
+plugins/st-mobile/node_modules/
+
+# 本地与私密
+local.properties
+*.jks
+*.keystore
+*.log
+out/
+plugin-backups/
+
+# 系统
+.DS_Store
+Thumbs.db
