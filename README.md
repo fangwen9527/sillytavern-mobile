@@ -56,10 +56,10 @@ node "public/scripts/extensions/third-party/sillytavern-mobile/install.mjs"
 
 ### 第 4 步：装手机 App
 
-**改装版（推荐）**：[直接下载 APK](https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.3.apk)（jsDelivr CDN，国内较快）
+**改装版（推荐）**：[直接下载 APK](https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.4.apk)（jsDelivr CDN，国内较快）
 
-> 备用原链：`https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.3.apk`
-> SHA-256：`f66a61525f9efc02b5d471969a948cb041081883b5c5bc53e0027108ae81ac29`
+> 备用原链：`https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.4.apk`
+> SHA-256：`4dc80757f95700e357ede43ee1ebb3c1ba32b9df4218ca64f20f56028470acbb`
 
 - 包名 `io.github.fangwen9527.stmobile`，可与官方 App 共存
 - **默认图标是酒馆（SillyTavern）官方标识**，可在设置里切换（鲸鱼娘 / DeepSeek 鲸鱼 ×6）
