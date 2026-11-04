@@ -165,7 +165,35 @@ async function refresh() {
     }
     renderDevices(status.devices);
     applyAdvanced(status);
+    lastStatus = status;
+    renderLanState(status);
     $('stm-log').textContent = (status.logs || []).slice(-40).join('\n') || '—';
+}
+
+let lastStatus = null;
+
+/** 第 4 步：局域网不可用时常驻显示原因，不用等点"生成"。 */
+function renderLanState(status) {
+    const box = $('stm-lan-error');
+    if (!box) return;
+    if (status && status.lan) {
+        box.style.display = 'none';
+        return;
+    }
+    const reason = (status && status.lanError) || '局域网通道未就绪';
+    box.textContent = '局域网二维码不可用：' + reason;
+    box.style.display = '';
+    setStep('pair', 'iroh 可用', 'pending');
+}
+
+/** 页脚版本号从 manifest 读，别再手写死。 */
+async function loadVersion() {
+    try {
+        const res = await fetch('/scripts/extensions/third-party/' + SELF_DIR + '/manifest.json');
+        const manifest = await res.json();
+        const el = $('stm-version');
+        if (el && manifest && manifest.version) el.textContent = '插件 v' + manifest.version;
+    } catch { /* 读不到就留着占位符 */ }
 }
 
 /** 第 7 步：实验开关。开关真相在服务端，这里只反映 /status 里的 settings。 */
@@ -215,6 +243,18 @@ async function generatePairing() {
     }
     const minutes = data.expiresAt ? Math.max(0, Math.round((data.expiresAt - Date.now()) / 60000)) : 10;
     $('stm-pair-hint').textContent = '扫任意一个，约 ' + minutes + ' 分钟内有效（先扫的生效，另一个立即失效）。扫不了码的话，用下面的配对链接。';
+
+    // 局域网二维码生成不出来时，把原因写清楚（最常见是端口被系统保留 / 证书签不出来）
+    const lanError = $('stm-lan-error');
+    if (lanError) {
+        if (data.lanUrl) {
+            lanError.style.display = 'none';
+        } else {
+            const reason = (lastStatus && lastStatus.lanError) || '局域网通道未就绪';
+            lanError.textContent = '局域网二维码不可用：' + reason;
+            lanError.style.display = '';
+        }
+    }
 
     // 配对链接：iroh 那段就是二维码里的原文（App 的 iroh 输入框直接吃），局域网那条是短链接
     const linkWrap = $('stm-link-wrap');
@@ -362,6 +402,7 @@ async function boot() {
     root = wrapper;
 
     installGenerationWatcher();
+    loadVersion();
     bindStepToggles();
     bindCopyButtons();
 

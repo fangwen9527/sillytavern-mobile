@@ -64,6 +64,20 @@
 .stm-link-title { font-size: 11px; opacity: .75; margin-bottom: 5px; line-height: 1.6; }
 .stm-link { font-size: 10.5px; max-height: 96px; }
 
+/* 快速上手 */
+.stm-quickstart { margin-bottom: 6px; }
+.stm-steps-list { margin: 0; padding-left: 20px; font-size: 12px; line-height: 1.9; }
+.stm-steps-list li { margin-bottom: 2px; }
+.stm-steps-list code { font-size: 11px; }
+.stm-links { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px;
+    padding-top: 8px; border-top: 1px dashed rgba(255, 255, 255, .12); font-size: 11.5px; }
+.stm-links a { color: inherit; text-decoration: underline; opacity: .85; }
+.stm-links a:hover { opacity: 1; }
+
+/* 局域网不可用提示 */
+.stm-qr-error { font-size: 11px; line-height: 1.7; color: #f0b849; background: rgba(240, 184, 73, .1);
+    border: 1px dashed rgba(240, 184, 73, .45); border-radius: 6px; padding: 8px 10px; text-align: left; }
+
 /* 开关行（高级/实验） */
 .stm-opt { display: flex; align-items: flex-start; gap: 12px; margin-top: 10px;
     padding: 10px 12px; border: 1px solid var(--SmartThemeBorderColor, #3a3f4b); border-radius: 8px; }

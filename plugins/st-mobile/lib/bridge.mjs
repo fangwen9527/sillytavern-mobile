@@ -11,6 +11,12 @@ import { persistRecoveredReply } from './background-gen.mjs';
 import { loadSettings, saveSettings } from './settings.mjs';
 
 const LAN_PORT = Number(process.env.ST_MOBILE_LAN_PORT || 8443);
+/**
+ * 局域网端口候选表。
+ * Windows 会把一些区间整段保留给 Hyper-V/WSL（`netsh interface ipv4 show excludedportrange`），
+ * 一旦 8443 落进保留段就会 EACCES，所以必须能自动换端口。
+ */
+const LAN_PORT_CANDIDATES = [LAN_PORT, 18443, 28443, 38443, 15443, 24443];
 
 function loadDevices() {
   const devices = new Map();
@@ -51,6 +57,8 @@ export class Bridge {
     this.sidecarPath = null;
     this.localOnly = false;
     this.lanInfo = null;
+    /** 局域网通道失败原因（找不到 openssl、端口占用、证书签不出来……）。 */
+    this.lanError = null;
     /** 最近的后台代跑记录（面板/状态里看得见，便于排查）。 */
     this.recovered = [];
     this.settings = loadSettings();
@@ -69,6 +77,7 @@ export class Bridge {
       descriptor: this.descriptor,
       lanUrl: this.lanUrl,
       lan: this.lanInfo,
+      lanError: this.lanError,
       recovered: this.recovered.slice(-10),
       settings: { ...this.settings },
       peerPath: this.peerPath,
@@ -130,22 +139,41 @@ export class Bridge {
             caKeyPem: tlsState.ca_private_key,
             addresses,
           });
-          const lanPort = await this.gateway.startLan({
-            cert: fs.readFileSync(lanCert.certFile),
-            key: fs.readFileSync(lanCert.keyFile),
-            port: LAN_PORT,
-            addresses: addresses.map((entry) => entry.address),
-          });
+          const lanCertPem = fs.readFileSync(lanCert.certFile);
+          const lanKeyPem = fs.readFileSync(lanCert.keyFile);
+          let lanPort = null;
+          let portError = null;
+          for (const candidate of [...new Set(LAN_PORT_CANDIDATES)]) {
+            try {
+              lanPort = await this.gateway.startLan({
+                cert: lanCertPem,
+                key: lanKeyPem,
+                port: candidate,
+                addresses: addresses.map((entry) => entry.address),
+              });
+              break;
+            } catch (error) {
+              portError = error;
+              if (!['EACCES', 'EADDRINUSE', 'EADDRNOTAVAIL'].includes(error.code)) throw error;
+              this.log('局域网端口 ' + candidate + ' 不可用（' + error.code + '），换下一个');
+            }
+          }
+          if (lanPort === null) {
+            throw new Error('没有可用的局域网端口：' + (portError ? portError.code + ' ' + portError.message : '全部候选失败'));
+          }
           this.lanInfo = {
             port: lanPort,
             addresses: addresses.map((entry) => entry.address),
             primary: addresses[0]?.address || null,
             regenerated: lanCert.regenerated,
           };
-          this.log('局域网网关监听 0.0.0.0:' + lanPort + '（' + addresses.map((a) => a.address).join(', ') + '）');
+          this.lanError = null;
+          this.log('局域网网关监听 0.0.0.0:' + lanPort + '（' + addresses.map((a) => a.address).join(', ') + '）'
+            + (lanCert.regenerated ? '，证书已重签' : '，证书沿用缓存'));
         } catch (lanError) {
           this.log('局域网通道启动失败（iroh 不受影响）: ' + lanError.message);
           this.lanInfo = null;
+          this.lanError = lanError.message;
         }
       }
 

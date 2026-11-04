@@ -367,15 +367,20 @@ export class Gateway {
   }
 
   async startLan({ cert, key, port = 8443, addresses = [] }) {
-    this.lanServer = this.createServer(cert, key);
-    await new Promise((resolve, reject) => {
-      this.lanServer.once('error', reject);
-      this.lanServer.listen(port, '0.0.0.0', () => {
-        this.lanPort = this.lanServer.address().port;
-        this.lanAddresses = addresses;
-        resolve();
+    const server = this.createServer(cert, key);
+    try {
+      await new Promise((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(port, '0.0.0.0', () => resolve());
       });
-    });
+    } catch (error) {
+      // 端口被系统保留（Hyper-V/WSL 排除段）或已被占用：关掉半成品再抛，交给上层换端口
+      try { server.close(); } catch { /* ignore */ }
+      throw error;
+    }
+    this.lanServer = server;
+    this.lanPort = server.address().port;
+    this.lanAddresses = addresses;
     return this.lanPort;
   }
 

@@ -56,10 +56,10 @@ node "public/scripts/extensions/third-party/sillytavern-mobile/install.mjs"
 
 ### 第 4 步：装手机 App
 
-**改装版（推荐）**：[直接下载 APK](https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.2.apk)（jsDelivr CDN，国内较快）
+**改装版（推荐）**：[直接下载 APK](https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.3.apk)（jsDelivr CDN，国内较快）
 
-> 备用原链：`https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.2.apk`
-> SHA-256：`43a3086af87370e6964b8039c150ec624620d395dbb6afca0e9977dac92a93a4`
+> 备用原链：`https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.3.apk`
+> SHA-256：`f66a61525f9efc02b5d471969a948cb041081883b5c5bc53e0027108ae81ac29`
 
 - 包名 `io.github.fangwen9527.stmobile`，可与官方 App 共存
 - **默认图标是酒馆（SillyTavern）官方标识**，可在设置里切换（鲸鱼娘 / DeepSeek 鲸鱼 ×6）
@@ -67,6 +67,8 @@ node "public/scripts/extensions/third-party/sillytavern-mobile/install.mjs"
 - 扫码页支持**从相册选择二维码图片**
 - 连接方式页只保留「局域网」+「iroh」两条；右上角齿轮是设置入口
 - 支持粘贴配对链接，不扫码也能配对
+- **后台保持**：切到其他应用后页面不重载，时长可选 1 / 5 / 10 / 30 分钟或自定义（默认 10 分钟）
+- 设置面板每项都显示当前值，不用点进去才知道现在是什么状态
 
 **官方版**：[DSH Mobile iroh 完整版](https://github.com/saya-ch/dsh-mobile/releases/tag/android-v0.7.1) 同样可以连本插件。
 
@@ -79,6 +81,15 @@ node "public/scripts/extensions/third-party/sillytavern-mobile/install.mjs"
 3. 手机扫码 → 直接进入酒馆；扫不了码就点「复制配对链接」，粘到 App 的「iroh 连接 → 配对信息」输入框里点「连接」
 
 二维码 / 配对链接 10 分钟有效，重新生成会让旧码立即作废。
+
+### 局域网二维码生成不出来？
+
+面板第 4 步会直接写出原因。常见两种，插件都会自动处理：
+
+- **端口被系统保留**：Windows 常把某段端口整段留给 Hyper-V/WSL（`netsh interface ipv4 show excludedportrange protocol=tcp` 可查）。
+  8443 落在保留段时插件会自动换到 18443 / 28443 等，链接和二维码跟着变，不用手动改。
+- **网卡地址变了**：换网络后 IP 可能从 192.168.124.12 变成 .6，旧证书的 SAN 就不覆盖了。
+  插件会用 node 原生解析证书发现这点并自动重签——这一步以前依赖系统 openssl，现在只在**真的需要重签**时才找它（找不到会明确告诉你装 Git for Windows 或用 `ST_MOBILE_OPENSSL` 指定路径）。
 
 ### 手机中途退出，回复也不会丢（实验，默认关闭）
 
