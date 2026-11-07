@@ -3,7 +3,8 @@ import QRCode from 'qrcode';
 import { Bridge } from './lib/bridge.mjs';
 import { renderPanel } from './lib/panel.mjs';
 import { IROH_LOCAL_PORT } from './lib/config.mjs';
-import { applyFirewallRule, buildFirewallCommand, ruleExists } from './lib/firewall.mjs';
+import { applyFirewallRule, buildFirewallCommandFor, firewallTargets, ruleExists } from './lib/firewall.mjs';
+import { settingsReport } from './lib/diagnose.mjs';
 
 export const info = {
     id: 'st-mobile',
@@ -79,11 +80,17 @@ export async function init(router) {
 
     router.get('/firewall', async (req, res) => {
         try {
+            const targets = firewallTargets(process.execPath, bridge?.sidecarPath);
             json(res, 200, {
                 platform: process.platform,
                 nodePath: process.execPath,
-                ruleExists: await ruleExists(),
-                command: buildFirewallCommand(process.execPath),
+                sidecarPath: bridge?.sidecarPath || null,
+                targets: await Promise.all(targets.map(async (target) => ({
+                    name: target.name,
+                    program: target.program,
+                    exists: await ruleExists(target.name),
+                    command: buildFirewallCommandFor(target.name, target.program),
+                }))),
             });
         } catch (error) {
             json(res, 500, { error: error.message });
@@ -92,11 +99,19 @@ export async function init(router) {
 
     router.post('/firewall/apply', async (req, res) => {
         try {
-            const result = await applyFirewallRule(process.execPath);
+            const result = await applyFirewallRule(process.execPath, bridge?.sidecarPath);
             log('防火墙：' + (result.message || result.reason));
             json(res, result.ok ? 200 : 409, result);
         } catch (error) {
             json(res, 500, { ok: false, message: error.message });
+        }
+    });
+
+    router.get('/diagnose', (req, res) => {
+        try {
+            json(res, 200, settingsReport());
+        } catch (error) {
+            json(res, 500, { ok: false, error: error.message });
         }
     });
 

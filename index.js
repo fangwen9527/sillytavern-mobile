@@ -467,6 +467,41 @@ async function boot() {
     bindStepToggles();
     bindCopyButtons();
 
+    if ($('stm-diagnose')) {
+        $('stm-diagnose').addEventListener('click', async () => {
+            const button = $('stm-diagnose');
+            const box = $('stm-diagnose-result');
+            const original = button.textContent;
+            button.textContent = '检查中…';
+            const response = await apiGet('/diagnose');
+            button.textContent = original;
+            if (!box) return;
+            const body = response.body || {};
+            if (!response.ok || !body.ok) {
+                box.textContent = '检查失败：' + (body.error || response.status);
+                box.style.color = '#f36b6b';
+                return;
+            }
+            const lines = [];
+            lines.push('settings.json 体积：' + body.mb + ' MB（阈值 ' + body.thresholdMb + ' MB）');
+            if (body.topExtensions && body.topExtensions.length) {
+                lines.push('占用最大的扩展设置：' + body.topExtensions.map((row) => row.key + ' ' + row.mb + ' MB').join('、'));
+            }
+            if (body.topScripts && body.topScripts.length) {
+                lines.push('酒馆助手脚本 Top：' + body.topScripts
+                    .map((row) => row.name + ' ' + row.mb + ' MB' + (row.enabled ? '' : '（已禁用）'))
+                    .join('、'));
+            }
+            if (body.warning) {
+                lines.push('');
+                lines.push('⚠ 体积偏大，手机端首屏很可能超时。把上面列出的「已禁用」大脚本删掉通常最有效（删前先备份 settings.json）。');
+            }
+            box.textContent = lines.join('\n');
+            box.style.color = body.warning ? '#f0b849' : '#56d98b';
+            box.style.whiteSpace = 'pre-wrap';
+        });
+    }
+
     if ($('stm-fw-apply')) {
         $('stm-fw-apply').addEventListener('click', async () => {
             const button = $('stm-fw-apply');
