@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
+import { once } from 'node:events';
 
 import { STATE_DIR } from './config.mjs';
 
@@ -29,14 +29,99 @@ function sha256File(file) {
   });
 }
 
-async function download(url, destination) {
-  const response = await fetch(url, { redirect: 'follow' });
-  if (!response.ok) throw new Error(`下载失败 ${response.status}: ${url}`);
-  fs.mkdirSync(path.dirname(destination), { recursive: true, mode: 0o700 });
+/** 多久没收到数据就判定卡死（不是总时长——50 KB/s 下 15 MB 要 5 分钟，那是正常速度）。 */
+const IDLE_TIMEOUT_MS = 30_000;
+const DOWNLOAD_ATTEMPTS = 4;
+
+/**
+ * 单次下载，支持断点续传。
+ * 老实现是裸 fetch + pipeline：没有超时、没有续传，一旦卡住就是永久「启动中」。
+ */
+async function downloadOnce(url, destination, log) {
   const temporary = destination + '.part';
-  await pipeline(Readable.fromWeb(response.body), fs.createWriteStream(temporary, { mode: 0o700 }));
-  fs.renameSync(temporary, destination);
-  return destination;
+  let start = 0;
+  try { start = fs.statSync(temporary).size; } catch { start = 0; }
+
+  const controller = new AbortController();
+  let idle = null;
+  const arm = () => {
+    if (idle) clearTimeout(idle);
+    idle = setTimeout(() => {
+      try { controller.abort(new Error('idle timeout')); } catch { /* ignore */ }
+    }, IDLE_TIMEOUT_MS);
+  };
+  arm();
+
+  let response;
+  try {
+    response = await fetch(url, {
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: start > 0 ? { Range: `bytes=${start}-` } : undefined,
+    });
+  } catch (error) {
+    clearTimeout(idle);
+    throw error;
+  }
+
+  if (response.status === 416 && start > 0) {
+    // 续传起点已经等于文件尾：说明上次其实下完了
+    clearTimeout(idle);
+    return temporary;
+  }
+  if (!response.ok) {
+    clearTimeout(idle);
+    throw new Error(`下载失败 ${response.status}: ${url}`);
+  }
+
+  const resumed = start > 0 && response.status === 206;
+  if (!resumed) start = 0;
+  if (resumed && log) log('检测到未完成的下载，从 ' + Math.round(start / 1024) + ' KB 处续传');
+
+  fs.mkdirSync(path.dirname(destination), { recursive: true, mode: 0o700 });
+  const out = fs.createWriteStream(temporary, { mode: 0o700, flags: resumed ? 'a' : 'w' });
+  try {
+    for await (const chunk of Readable.fromWeb(response.body)) {
+      arm();
+      if (!out.write(chunk)) await once(out, 'drain');
+    }
+    await new Promise((resolve, reject) => out.end((error) => (error ? reject(error) : resolve())));
+  } catch (error) {
+    out.destroy();
+    throw error;
+  } finally {
+    clearTimeout(idle);
+  }
+  return temporary;
+}
+
+export async function download(url, destination, log = () => {}) {
+  const temporary = destination + '.part';
+  let lastError = null;
+  for (let attempt = 1; attempt <= DOWNLOAD_ATTEMPTS; attempt += 1) {
+    try {
+      await downloadOnce(url, destination, log);
+      fs.renameSync(temporary, destination);
+      return destination;
+    } catch (error) {
+      lastError = error;
+      let partial = 0;
+      try { partial = fs.statSync(temporary).size; } catch { partial = 0; }
+      const reason = error?.name === 'AbortError' || /idle timeout/.test(error?.message || '')
+        ? '超过 ' + IDLE_TIMEOUT_MS / 1000 + ' 秒没有收到数据'
+        : (error?.message || '未知错误');
+      if (attempt < DOWNLOAD_ATTEMPTS) {
+        log('下载中断（第 ' + attempt + '/' + DOWNLOAD_ATTEMPTS + ' 次）：' + reason
+          + (partial > 0 ? '，已缓存 ' + Math.round(partial / 1024) + ' KB，稍后续传' : ''));
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+      } else {
+        log('下载失败：' + reason);
+      }
+    }
+  }
+  throw new Error('组件下载失败（已重试 ' + DOWNLOAD_ATTEMPTS + ' 次）：'
+    + (lastError?.message || '未知错误')
+    + '。可手动下载放到 ' + destination + '，或用 ST_MOBILE_IROH_HOST 指向已有的 sidecar。来源: ' + url);
 }
 
 /** 本地已存在且校验通过的副本。 */
@@ -54,7 +139,16 @@ function dshMobileCopy(platform) {
 }
 
 async function readManifest() {
-  const response = await fetch(`${CDN}/native/manifest.json`, { redirect: 'follow' });
+  let response;
+  try {
+    response = await fetch(`${CDN}/native/manifest.json`, {
+      redirect: 'follow',
+      signal: AbortSignal.timeout(IDLE_TIMEOUT_MS),
+    });
+  } catch (error) {
+    throw new Error('无法获取 iroh 组件清单（网络或超时）：' + (error?.message || 'unknown')
+      + '。可设置 ST_MOBILE_IROH_HOST 指向已有的 sidecar 跳过下载。');
+  }
   if (!response.ok) throw new Error('无法获取 iroh 组件清单: ' + response.status);
   return response.json();
 }
@@ -104,7 +198,7 @@ export async function ensureSidecar({ log = () => {}, forceDownload = false } = 
 
   log('正在下载 iroh sidecar（约 15 MB）…');
   const fileName = path.basename(target.path);
-  await download(`${CDN}/native/${fileName}`, target.path);
+  await download(`${CDN}/native/${fileName}`, target.path, log);
   fs.chmodSync(target.path, 0o700);
 
   const actual = await sha256File(target.path);

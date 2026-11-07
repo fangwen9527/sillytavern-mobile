@@ -139,9 +139,41 @@ function markRunning(status) {
     setStep('status', entry[0], entry[1] === 'ok' ? 'done' : 'pending');
 }
 
+/** 404 = 酒馆根本没加载这个服务端插件，不能只说「未安装」。 */
+function markPluginDisabled() {
+    setBadge('未启用', 'bad');
+    setStep('install', '待确认', 'pending');
+    setStep('config', '未开启', 'pending');
+    setStep('restart', '待重启', 'pending');
+    setStep('pair', '—', '');
+    setStep('status', '404', 'bad');
+    setStep('advanced', '—', '');
+    const box = $('stm-auto-recover');
+    if (box) box.disabled = true;
+    if ($('stm-origin')) $('stm-origin').textContent = '—';
+    if ($('stm-path')) $('stm-path').textContent = '—';
+    if ($('stm-peers')) $('stm-peers').textContent = '—';
+    if ($('stm-devices')) $('stm-devices').textContent = '还没有设备配对。';
+    if ($('stm-log')) {
+        $('stm-log').textContent = [
+            '酒馆返回 404：服务端插件没有被加载。两种可能，按顺序排查：',
+            '',
+            '① plugins/st-mobile 不存在 —— 先跑第 1 步的安装命令。',
+            '② config.yaml 里 enableServerPlugins 不是 true ——',
+            '   SillyTavern 1.19 的默认值就是 false，必须手动改成 true，然后重启酒馆。',
+            '',
+            '改完重启后本面板会自动变成「运行中」。',
+        ].join('\n');
+    }
+}
+
 async function refresh() {
     if (!root) return;
     const result = await apiGet('/status');
+    if (result.status === 404) {
+        markPluginDisabled();
+        return;
+    }
     if (!result.ok || !result.body || result.body.raw) {
         markNotInstalled();
         $('stm-origin').textContent = '—';

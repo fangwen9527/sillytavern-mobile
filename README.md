@@ -48,11 +48,20 @@ node "public/scripts/extensions/third-party/sillytavern-mobile/install.mjs"
 
 脚本会：定位酒馆目录 → 备份旧版本到 `plugin-backups/` → 复制 `plugins/st-mobile` → `npm install`。
 
-### 第 3 步：重启酒馆
+### 第 3 步：改开关并重启酒馆
 
-`config.yaml` 里确认 `enableServerPlugins: true`（默认就是），然后重启。
+> ⚠️ **SillyTavern 1.19 起 `enableServerPlugins` 的默认值是 `false`，不是 `true`。**
+> 不改这一项，插件永远加载不到，面板会一直停在「未启用」，所有接口返回 **404**。
 
-面板状态变成 **运行中** 即成功。
+打开酒馆根目录的 `config.yaml`，把这一行改成 `true`：
+
+```yaml
+enableServerPlugins: true
+```
+
+然后重启酒馆。面板状态变成 **运行中** 即成功。
+
+如果面板显示「未启用 / 404」，先确认上面这一项；确认无误后仍然 404，再检查 `plugins/st-mobile` 是否存在（第 2 步脚本是否真的跑成功）。
 
 ### 第 4 步：装手机 App
 
@@ -86,6 +95,8 @@ node "public/scripts/extensions/third-party/sillytavern-mobile/install.mjs"
 
 面板第 4 步会直接写出原因。常见两种，插件都会自动处理：
 
+- **npm 装依赖被本机策略拦下**：报 `SAFE_DELETE_BULK_CONFIRM_REQUIRED` 之类时，用独立缓存目录重来：
+  `npm install --cache .npm-cache --registry https://registry.npmmirror.com`。
 - **端口被系统保留**：Windows 常把某段端口整段留给 Hyper-V/WSL（`netsh interface ipv4 show excludedportrange protocol=tcp` 可查）。
   8443 落在保留段时插件会自动换到 18443 / 28443 等，链接和二维码跟着变，不用手动改。
 - **网卡地址变了**：换网络后 IP 可能从 192.168.124.12 变成 .6，旧证书的 SAN 就不覆盖了。

@@ -90,11 +90,12 @@
         </div>
         <div class="stm-step-body">
             <div class="stm-hint">
-                酒馆根目录的 <code>config.yaml</code> 里必须有这一行（默认就是 <code>true</code>，如果你改过就检查一下）：
+                <b>必须</b>把这一项改成 <code>true</code>。SillyTavern <b>1.19 的默认值是 <code>false</code></b>，
+                不改的话插件永远不会被加载，本面板会一直显示「未启用」、所有接口返回 404。
             </div>
             <pre class="stm-code">enableServerPlugins: true</pre>
             <div class="stm-hint" style="margin-top:8px">
-                这一项关掉时，<code>plugins/</code> 下的所有服务端插件都不会被加载（包括这个）。改完要重启酒馆。
+                这一项关掉时，<code>plugins/</code> 下的所有服务端插件都不会被加载（包括这个）。<b>改完必须重启酒馆。</b>
             </div>
         </div>
     </div>
