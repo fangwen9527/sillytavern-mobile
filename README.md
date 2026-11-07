@@ -65,10 +65,10 @@ enableServerPlugins: true
 
 ### 第 4 步：装手机 App
 
-**改装版（推荐）**：[直接下载 APK](https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.5.apk)（jsDelivr CDN，国内较快）
+**改装版（推荐）**：[直接下载 APK](https://cdn.jsdelivr.net/gh/fangwen9527/sillytavern-mobile@main/dist/stmobile-0.1.6.apk)（jsDelivr CDN，国内较快）
 
-> 备用原链：`https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.5.apk`
-> SHA-256：`ec3c94c92654795938f47ff5ac7d05cbe75c5228a03ecaf223b9edf74528459b`
+> 备用原链：`https://github.com/fangwen9527/sillytavern-mobile/raw/main/dist/stmobile-0.1.6.apk`
+> SHA-256：`1cc7b309fd2aff6953628830d09584c09a810741d3593fdf38c6390ef03f0f78`
 
 - 包名 `io.github.fangwen9527.stmobile`，可与官方 App 共存
 - **默认图标是酒馆（SillyTavern）官方标识**，可在设置里切换（鲸鱼娘 / DeepSeek 鲸鱼 ×6）
@@ -110,7 +110,10 @@ enableServerPlugins: true
 | 未压缩 | **30.2 MB** | 1.0 s（本机） |
 | gzip 后 | 7.1 MB | 0.4 s（本机） |
 
-在慢一点的机器上，光服务端序列化就要 **13–19 秒**，加上传输，手机端整页加载接近 30 秒 —— 正好撞上 App 的连接预算，表现就是「卡在初始化然后超时」。**gzip 救不了它**（ST 早就开着 `compression` 了），因为瓶颈是序列化 + 绝对体积。
+在慢一点的机器上，光服务端序列化就要 **13–19 秒**，加上传输，手机端整页加载接近 30 秒。
+
+> App 0.1.6 起，**局域网连接预算已从 30 秒放宽到 90 秒**，这类大设置不会再必然超时；
+> 但设置体积该瘦还是要瘦（首屏快慢是用户直接感受得到的）。**gzip 救不了它**（ST 早就开着 `compression` 了），因为瓶颈是序列化 + 绝对体积。
 
 常见膨胀源：**酒馆助手（tavern_helper）里的脚本**。实测本机 `extension_settings.tavern_helper.script` 一项就占 **11.27 MB**，其中不少还是**已禁用**的脚本 —— 禁用了但内容还留在设置里，照样每次全量返回。
 
