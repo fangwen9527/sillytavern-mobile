@@ -266,7 +266,20 @@ node server.js</pre>
                 </div>
                 <pre class="stm-code" data-cmd="firewall" id="stm-firewall" style="margin-top:6px">—</pre>
                 <div class="stm-btns">
-                    <div class="menu_button stm-btn stm-copy" data-copy="firewall">复制防火墙命令</div>
+                    <div class="menu_button stm-btn" id="stm-fw-apply">一键添加防火墙规则</div>
+                    <div class="menu_button stm-btn stm-copy" data-copy="firewall">复制命令手动执行</div>
+                </div>
+                <div class="stm-hint" id="stm-fw-result" style="margin-top:6px"></div>
+
+                <div class="stm-hint" style="margin-top:10px">
+                    <b>关于管理员权限：</b>改防火墙属于系统级操作，Windows 要求提权。
+                </div>
+                <div class="stm-hint" style="margin-top:4px">
+                    · 点上面的按钮时，如果酒馆本身不是管理员，会<b>弹一次系统 UAC 提权框</b>（「是否允许此应用更改设备」），
+                    点「是」即可，<b>不需要重开酒馆</b>。<br>
+                    · 如果 UAC 被拒绝或系统不给弹框（例如酒馆以服务/计划任务方式在后台跑），
+                    就用<b>管理员 PowerShell</b> 手动跑下面那条命令，效果完全一样。<br>
+                    · 已经成功添加过一次之后，再点会提示「规则已经存在」，不会重复创建。
                 </div>
                 <div class="stm-hint" style="margin-top:6px">
                     网络配置文件是「公用」时，把命令里的 <code>profile=private</code> 换成 <code>profile=any</code>。

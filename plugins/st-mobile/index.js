@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { Bridge } from './lib/bridge.mjs';
 import { renderPanel } from './lib/panel.mjs';
 import { IROH_LOCAL_PORT } from './lib/config.mjs';
+import { applyFirewallRule, buildFirewallCommand, ruleExists } from './lib/firewall.mjs';
 
 export const info = {
     id: 'st-mobile',
@@ -74,6 +75,29 @@ export async function init(router) {
     router.post('/settings', (req, res) => {
         const patch = req.body && typeof req.body === 'object' ? req.body : {};
         json(res, 200, bridge.updateSettings({ backgroundRecover: patch.backgroundRecover }));
+    });
+
+    router.get('/firewall', async (req, res) => {
+        try {
+            json(res, 200, {
+                platform: process.platform,
+                nodePath: process.execPath,
+                ruleExists: await ruleExists(),
+                command: buildFirewallCommand(process.execPath),
+            });
+        } catch (error) {
+            json(res, 500, { error: error.message });
+        }
+    });
+
+    router.post('/firewall/apply', async (req, res) => {
+        try {
+            const result = await applyFirewallRule(process.execPath);
+            log('防火墙：' + (result.message || result.reason));
+            json(res, result.ok ? 200 : 409, result);
+        } catch (error) {
+            json(res, 500, { ok: false, message: error.message });
+        }
     });
 
     router.get('/logs', (req, res) => {

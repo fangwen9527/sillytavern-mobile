@@ -9,6 +9,7 @@ import { buildDescriptor, caFingerprint, irohHostname } from './pairing.mjs';
 import { ensureLanCertificate, lanAddresses } from './lan.mjs';
 import { persistRecoveredReply } from './background-gen.mjs';
 import { loadSettings, saveSettings } from './settings.mjs';
+import { buildFirewallCommand } from './firewall.mjs';
 
 /**
  * 局域网端口候选表。
@@ -29,16 +30,6 @@ function loadDevices() {
 
 function saveDevices(devices) {
   fs.writeFileSync(DEVICES_FILE, JSON.stringify({ version: 1, devices: [...devices.values()] }, null, 2), { mode: 0o600 });
-}
-
-/**
- * 按「程序」而不是「端口」放行防火墙。
- * 端口可能因为系统保留段而回退，按端口写的规则会悄悄失效，按程序写的不会。
- */
-function buildFirewallCommand(nodePath) {
-  const program = String(nodePath || 'node.exe').replace(/"/g, '');
-  return 'netsh advfirewall firewall add rule name="SillyTavern Remote" dir=in action=allow '
-    + 'program="' + program + '" profile=private enable=yes';
 }
 
 function pemToDer(pem) {

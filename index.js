@@ -467,6 +467,29 @@ async function boot() {
     bindStepToggles();
     bindCopyButtons();
 
+    if ($('stm-fw-apply')) {
+        $('stm-fw-apply').addEventListener('click', async () => {
+            const button = $('stm-fw-apply');
+            const result = $('stm-fw-result');
+            const original = button.textContent;
+            button.textContent = '处理中…';
+            if (result) { result.textContent = '正在请求提权，如果弹出 UAC 请点「是」…'; result.style.color = ''; }
+            const response = await apiPost('/firewall/apply', {});
+            button.textContent = original;
+            if (!result) return;
+            const body = response.body || {};
+            if (response.ok && body.ok) {
+                result.textContent = body.message || '规则已添加。';
+                result.style.color = '#56d98b';
+            } else {
+                result.textContent = (body.message || ('添加失败：' + response.status))
+                    + '（可直接用下面那条命令，在管理员 PowerShell 里执行）';
+                result.style.color = '#f36b6b';
+            }
+            refresh().catch(() => {});
+        });
+    }
+
     if ($('stm-auto-recover')) {
         $('stm-auto-recover').addEventListener('change', async () => {
             const box = $('stm-auto-recover');

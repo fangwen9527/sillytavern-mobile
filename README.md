@@ -99,8 +99,9 @@ enableServerPlugins: true
 
 1. **Windows 防火墙**（最常见）。把网络改成「专用」只是改配置文件，入站规则仍然可能不存在。
 
-   **面板第 6 步「局域网排障」里直接给了一条可复制的命令**（已按你机器上 node 的真实路径生成），
-   复制后到**管理员 PowerShell** 里跑一次即可。它按**程序**放行，端口变化不受影响：
+   **面板第 6 步「局域网排障」里有一个「一键添加防火墙规则」按钮**，点它就行（详见下面「关于管理员权限」）。
+   旁边还有一条可复制的等价命令（已按你机器上 node 的真实路径生成），想手动执行也可以。
+   它按**程序**放行，端口变化不受影响：
 
    ```powershell
    netsh advfirewall firewall add rule name="SillyTavern Remote" dir=in action=allow program="<你的 node.exe 路径>" profile=private enable=yes
@@ -113,6 +114,34 @@ enableServerPlugins: true
 
 - 配对码 10 分钟过期，重新生成再扫；
 - App 里如果还留着旧设备（旧的 IP / 旧端点），先删掉再扫。
+
+### 关于管理员权限（一键加防火墙）
+
+改 Windows 防火墙属于系统级操作，**必须提权**。面板里的「一键添加防火墙规则」按三种情况处理：
+
+| 情况 | 点按钮后会发生什么 |
+|---|---|
+| **酒馆本身就是管理员权限**（右键「以管理员身份运行」启动的） | 直接成功，没有任何弹窗 |
+| **酒馆是普通权限**（双击启动的常见情况） | 会**弹一次系统 UAC 提权框**（「是否允许此应用更改你的设备」），点「是」即可，**不用重开酒馆** |
+| **系统不给弹 UAC**（酒馆以 Windows 服务 / 计划任务 / 无交互会话方式运行） | 会提示失败。此时用**管理员 PowerShell** 手动跑面板里那条命令，效果完全一样 |
+
+想一劳永逸地以管理员启动酒馆（避免每次都弹 UAC）：
+
+```powershell
+# 在酒馆根目录（有 server.js 的地方）打开 PowerShell，执行一次
+Start-Process node -ArgumentList 'server.js' -Verb RunAs -WorkingDirectory (Get-Location)
+```
+
+或者：给 `node.exe`（或你的启动脚本）建一个快捷方式 → 右键 → **属性** → **高级** → 勾选「以管理员身份运行」。
+
+**规则的安全边界**：只放行 `node.exe` 的**入站**、且只在**专用网络**（`profile=private`）生效；公用网络下不生效。
+撤销规则：
+
+```powershell
+netsh advfirewall firewall delete rule name="SillyTavern Remote"
+```
+
+按钮是幂等的：规则已存在时会提示「无需重复添加」，不会建出第二条。
 
 ### 更新插件
 
