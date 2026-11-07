@@ -98,13 +98,14 @@ enableServerPlugins: true
 **A. 显示「还没有收到任何局域网请求」** → 请求根本没到电脑，按顺序查：
 
 1. **Windows 防火墙**（最常见）。把网络改成「专用」只是改配置文件，入站规则仍然可能不存在。
-   端口会变（8443 被系统保留时会自动换到 18443/28443），所以**按程序放行**比按端口放行可靠：
+
+   **面板第 6 步「局域网排障」里直接给了一条可复制的命令**（已按你机器上 node 的真实路径生成），
+   复制后到**管理员 PowerShell** 里跑一次即可。它按**程序**放行，端口变化不受影响：
+
    ```powershell
-   # 先找到 node.exe 的真实路径
-   where.exe node
-   # 再用它建一条专用网络下的入站规则（路径换成上一步的结果）
-   netsh advfirewall firewall add rule name="SillyTavern Remote" dir=in action=allow program="C:\Program Files\nodejs\node.exe" profile=private
+   netsh advfirewall firewall add rule name="SillyTavern Remote" dir=in action=allow program="<你的 node.exe 路径>" profile=private enable=yes
    ```
+   网络是「公用」时把 `profile=private` 换成 `profile=any`。
 2. **是否真的同网段**：面板显示的局域网地址（如 `192.168.1.130:8443`）前三段要和手机 Wi-Fi 里的 IP 一致。
 3. **路由器 AP 隔离 / 访客网络**：开启时同一个 Wi-Fi 也互不相通。
 
@@ -125,7 +126,9 @@ enableServerPlugins: true
 - **npm 装依赖被本机策略拦下**：报 `SAFE_DELETE_BULK_CONFIRM_REQUIRED` 之类时，用独立缓存目录重来：
   `npm install --cache .npm-cache --registry https://registry.npmmirror.com`。
 - **端口被系统保留**：Windows 常把某段端口整段留给 Hyper-V/WSL（`netsh interface ipv4 show excludedportrange protocol=tcp` 可查）。
-  8443 落在保留段时插件会自动换到 18443 / 28443 等，链接和二维码跟着变，不用手动改。
+  8443 正好落在常见保留段（8403–8502）里，所以插件**默认改用 18443**，并把选定的端口**记进 `settings.json`**，
+  之后每次启动优先复用——端口若每次都漂，你建好的防火墙规则就白费了。
+  只有在被占用时才会回退到 28443 / 8443 等，面板第 6 步能看到当前实际端口。
 - **网卡地址变了**：换网络后 IP 可能从 192.168.124.12 变成 .6，旧证书的 SAN 就不覆盖了。
   插件会用 node 原生解析证书发现这点并自动重签——这一步以前依赖系统 openssl，现在只在**真的需要重签**时才找它（找不到会明确告诉你装 Git for Windows 或用 `ST_MOBILE_OPENSSL` 指定路径）。
 

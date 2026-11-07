@@ -10,13 +10,13 @@ import { ensureLanCertificate, lanAddresses } from './lan.mjs';
 import { persistRecoveredReply } from './background-gen.mjs';
 import { loadSettings, saveSettings } from './settings.mjs';
 
-const LAN_PORT = Number(process.env.ST_MOBILE_LAN_PORT || 8443);
 /**
  * 局域网端口候选表。
- * Windows 会把一些区间整段保留给 Hyper-V/WSL（`netsh interface ipv4 show excludedportrange`），
- * 一旦 8443 落进保留段就会 EACCES，所以必须能自动换端口。
+ *
+ * 8443 常落进 Windows 给 Hyper-V/WSL 保留的段（8403–8502 之类），b 就 EACCES，
+ * 所以默认改用 **18443**，并把它记住——端口每次变，用户建的防火墙规则就白费了。
  */
-const LAN_PORT_CANDIDATES = [LAN_PORT, 18443, 28443, 38443, 15443, 24443];
+const LAN_PORT_FALLBACKS = [18443, 8443, 28443, 38443, 15443, 24443];
 
 function loadDevices() {
   const devices = new Map();
@@ -29,6 +29,16 @@ function loadDevices() {
 
 function saveDevices(devices) {
   fs.writeFileSync(DEVICES_FILE, JSON.stringify({ version: 1, devices: [...devices.values()] }, null, 2), { mode: 0o600 });
+}
+
+/**
+ * 按「程序」而不是「端口」放行防火墙。
+ * 端口可能因为系统保留段而回退，按端口写的规则会悄悄失效，按程序写的不会。
+ */
+function buildFirewallCommand(nodePath) {
+  const program = String(nodePath || 'node.exe').replace(/"/g, '');
+  return 'netsh advfirewall firewall add rule name="SillyTavern Remote" dir=in action=allow '
+    + 'program="' + program + '" profile=private enable=yes';
 }
 
 function pemToDer(pem) {
@@ -143,9 +153,12 @@ export class Bridge {
           });
           const lanCertPem = fs.readFileSync(lanCert.certFile);
           const lanKeyPem = fs.readFileSync(lanCert.keyFile);
+          const envPort = Number(process.env.ST_MOBILE_LAN_PORT || 0);
+          const remembered = Number(this.settings.lanPort || 0);
+          const order = [envPort, remembered, ...LAN_PORT_FALLBACKS].filter((port) => Number.isInteger(port) && port > 0);
           let lanPort = null;
           let portError = null;
-          for (const candidate of [...new Set(LAN_PORT_CANDIDATES)]) {
+          for (const candidate of [...new Set(order)]) {
             try {
               lanPort = await this.gateway.startLan({
                 cert: lanCertPem,
@@ -163,11 +176,16 @@ export class Bridge {
           if (lanPort === null) {
             throw new Error('没有可用的局域网端口：' + (portError ? portError.code + ' ' + portError.message : '全部候选失败'));
           }
+          if (remembered !== lanPort) {
+            this.settings = saveSettings(this.settings, { lanPort });
+            this.log('局域网端口固定为 ' + lanPort + '（已记住，下次优先复用；防火墙按程序放行可免维护）');
+          }
           this.lanInfo = {
             port: lanPort,
             addresses: addresses.map((entry) => entry.address),
             primary: addresses[0]?.address || null,
             regenerated: lanCert.regenerated,
+            firewallCommand: buildFirewallCommand(process.execPath),
           };
           this.lanError = null;
           this.log('局域网网关监听 0.0.0.0:' + lanPort + '（' + addresses.map((a) => a.address).join(', ') + '）'
@@ -244,9 +262,13 @@ export class Bridge {
 
   /** 改开关：即时生效，网关每次请求现读，不用重启酒馆。 */
   updateSettings(patch) {
+    const before = { ...this.settings };
     this.settings = saveSettings(this.settings, patch);
     if (this.gateway) this.gateway.autoRecoverEnabled = () => this.settings.backgroundRecover;
-    this.log('设置已更新：断线代跑 = ' + (this.settings.backgroundRecover ? '开' : '关'));
+    const changed = Object.keys(this.settings).filter((key) => this.settings[key] !== before[key]);
+    if (changed.length) {
+      this.log('设置已更新：' + changed.map((key) => key + '=' + this.settings[key]).join(', '));
+    }
     return { ...this.settings };
   }
 

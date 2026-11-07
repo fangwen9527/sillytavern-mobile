@@ -256,6 +256,23 @@ node server.js</pre>
             <div class="stm-row"><span class="stm-k">最近局域网请求</span><span class="stm-v" id="stm-lan-last">—</span></div>
             <div class="stm-row" id="stm-err-row" style="display:none"><span class="stm-k">错误</span><span class="stm-v" id="stm-err" style="color:#f36b6b"></span></div>
             <div class="stm-section" style="margin-top:10px">
+                <h4>局域网排障</h4>
+                <div class="stm-hint">
+                    手机连不上时，先看上面「最近局域网请求」：<b>空的</b>说明请求根本没到电脑（防火墙 / 不同网段 / AP 隔离）；
+                    <b>有记录</b>说明到了，问题在证书或配对码过期。
+                </div>
+                <div class="stm-hint" style="margin-top:8px">
+                    防火墙按<b>程序</b>放行（端口变化不受影响）。复制下面这条，在<b>管理员 PowerShell</b> 里跑一次：
+                </div>
+                <pre class="stm-code" data-cmd="firewall" id="stm-firewall" style="margin-top:6px">—</pre>
+                <div class="stm-btns">
+                    <div class="menu_button stm-btn stm-copy" data-copy="firewall">复制防火墙命令</div>
+                </div>
+                <div class="stm-hint" style="margin-top:6px">
+                    网络配置文件是「公用」时，把命令里的 <code>profile=private</code> 换成 <code>profile=any</code>。
+                </div>
+            </div>
+            <div class="stm-section" style="margin-top:10px">
                 <h4>已配对设备</h4>
                 <div id="stm-devices" class="stm-hint">还没有设备配对。</div>
             </div>

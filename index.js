@@ -242,6 +242,10 @@ function renderLanDiagnostics(status) {
             ? (lan.primary || '—') + ':' + lan.port
             : (status && status.lanError) || '未启用';
     }
+    const firewallEl = $('stm-firewall');
+    if (firewallEl) {
+        firewallEl.textContent = (lan && lan.firewallCommand) || '局域网未启用，暂无命令';
+    }
     const lastEl = $('stm-lan-last');
     if (!lastEl) return;
     const last = status && status.lastLanRequest;

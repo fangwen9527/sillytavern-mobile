@@ -10,13 +10,20 @@ import { SETTINGS_FILE, ensureStateDir } from './config.mjs';
 export const DEFAULT_SETTINGS = Object.freeze({
   /** 断线代跑（实验）：手机在生成途中断开时，网关继续把上游跑完并写回聊天。 */
   backgroundRecover: false,
+  /**
+   * 局域网端口（0 = 自动）。
+   * 绑定成功后会被记住：端口换来换去会让用户建好的防火墙规则失效，
+   * 所以一旦选定就固定下来，下次启动优先复用。
+   */
+  lanPort: 0,
 });
 
 function coerce(raw) {
   const out = { ...DEFAULT_SETTINGS };
   if (!raw || typeof raw !== 'object') return out;
-  for (const key of Object.keys(DEFAULT_SETTINGS)) {
-    if (typeof raw[key] === 'boolean') out[key] = raw[key];
+  for (const [key, fallback] of Object.entries(DEFAULT_SETTINGS)) {
+    if (typeof fallback === 'boolean' && typeof raw[key] === 'boolean') out[key] = raw[key];
+    if (typeof fallback === 'number' && Number.isInteger(raw[key]) && raw[key] >= 0) out[key] = raw[key];
   }
   return out;
 }
@@ -32,8 +39,9 @@ export function loadSettings() {
 export function saveSettings(current, patch) {
   const merged = { ...coerce(current) };
   if (patch && typeof patch === 'object') {
-    for (const key of Object.keys(DEFAULT_SETTINGS)) {
-      if (typeof patch[key] === 'boolean') merged[key] = patch[key];
+    for (const [key, fallback] of Object.entries(DEFAULT_SETTINGS)) {
+      if (typeof fallback === 'boolean' && typeof patch[key] === 'boolean') merged[key] = patch[key];
+      if (typeof fallback === 'number' && Number.isInteger(patch[key]) && patch[key] >= 0) merged[key] = patch[key];
     }
   }
   try {
