@@ -199,6 +199,7 @@ async function refresh() {
     applyAdvanced(status);
     lastStatus = status;
     renderLanState(status);
+    renderLanDiagnostics(status);
     $('stm-log').textContent = (status.logs || []).slice(-40).join('\n') || '—';
 }
 
@@ -226,6 +227,30 @@ async function loadVersion() {
         const el = $('stm-version');
         if (el && manifest && manifest.version) el.textContent = '插件 v' + manifest.version;
     } catch { /* 读不到就留着占位符 */ }
+}
+
+/**
+ * 局域网排障：手机连不上时，先看「最近局域网请求」。
+ * 空的 = 请求根本没到电脑（防火墙 / 不同网段 / AP 隔离）；
+ * 有记录 = 到了电脑，问题在证书或鉴权。
+ */
+function renderLanDiagnostics(status) {
+    const lan = status && status.lan;
+    const lanEl = $('stm-lan');
+    if (lanEl) {
+        lanEl.textContent = lan
+            ? (lan.primary || '—') + ':' + lan.port
+            : (status && status.lanError) || '未启用';
+    }
+    const lastEl = $('stm-lan-last');
+    if (!lastEl) return;
+    const last = status && status.lastLanRequest;
+    if (last) {
+        const time = new Date(last.at).toLocaleTimeString();
+        lastEl.textContent = time + ' · ' + last.remote + ' · ' + last.method + ' ' + last.path;
+    } else {
+        lastEl.textContent = '还没有收到任何局域网请求';
+    }
 }
 
 /** 第 7 步：实验开关。开关真相在服务端，这里只反映 /status 里的 settings。 */

@@ -71,6 +71,8 @@ export class Gateway {
     this.log = options.log || (() => {});
     /** 手机在生成途中断开时，上游仍会跑完，这里把成品交出去落盘。 */
     this.onGenerationOrphaned = options.onGenerationOrphaned || (() => {});
+    this.lanRequests = 0;
+    this.lastLanRequest = null;
     /** 断线代跑开关（实验功能，默认关闭）。每次请求现读，切了立刻生效。 */
     this.autoRecoverEnabled = options.autoRecoverEnabled || (() => false);
   }
@@ -324,8 +326,20 @@ export class Gateway {
     });
   }
 
-  async handler(req, res) {
+  async handler(req, res, tag = 'iroh') {
     const pathname = new URL(req.url, 'https://gateway.invalid').pathname;
+    // 局域网侧的入站请求单独记账：手机连不上时，先看这里有没有记录，
+    // 就能立刻区分「根本没到电脑」（防火墙 / 网段 / AP 隔离）和「到了但没通过鉴权」。
+    if (tag === 'lan' && (pathname.startsWith('/mobile-access/') || pathname === '/')) {
+      this.lanRequests = (this.lanRequests || 0) + 1;
+      this.lastLanRequest = {
+        at: Date.now(),
+        method: req.method,
+        path: pathname,
+        remote: String(req.socket.remoteAddress || '').replace(/^::ffff:/, ''),
+      };
+      this.log('[局域网] ' + req.method + ' ' + pathname + ' ← ' + this.lastLanRequest.remote);
+    }
 
     if (pathname.startsWith('/mobile-access/')) {
       const control = this.handleControl(res, pathname);
@@ -345,9 +359,9 @@ export class Gateway {
     return this.proxy(req, res);
   }
 
-  createServer(cert, key) {
+  createServer(cert, key, tag = 'iroh') {
     return https.createServer({ cert, key, ALPNProtocols: ['http/1.1'] }, (req, res) => {
-      this.handler(req, res).catch((error) => {
+      this.handler(req, res, tag).catch((error) => {
         if (!res.headersSent) res.writeHead(500, { 'content-type': 'text/plain' });
         res.end('internal error: ' + error.message);
       });
@@ -367,7 +381,7 @@ export class Gateway {
   }
 
   async startLan({ cert, key, port = 8443, addresses = [] }) {
-    const server = this.createServer(cert, key);
+    const server = this.createServer(cert, key, 'lan');
     try {
       await new Promise((resolve, reject) => {
         server.once('error', reject);

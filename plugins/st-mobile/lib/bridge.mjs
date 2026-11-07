@@ -78,6 +78,8 @@ export class Bridge {
       lanUrl: this.lanUrl,
       lan: this.lanInfo,
       lanError: this.lanError,
+      lanRequests: this.gateway?.lanRequests ?? 0,
+      lastLanRequest: this.gateway?.lastLanRequest ?? null,
       recovered: this.recovered.slice(-10),
       settings: { ...this.settings },
       peerPath: this.peerPath,
